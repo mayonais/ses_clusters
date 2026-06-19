@@ -1,0 +1,55 @@
+=== Correlations ===
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.8876  0.9851  0.9941  0.9751  0.9963  0.9992 
+
+=== Absolute Differences ===
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+0.004308 0.007852 0.009329 0.015884 0.014075 0.046525 
+
+=== Cluster counts by run ===
+ [1] 12  9 13 13 12 12 13 14 12 13
+
+Selected run: 5 out of 10 
+
+=== Cluster label counts ===
+
+Hispanic / Younger / Low income     White / Older / High income 
+                             71                              50 
+   Mixed race / Mid-high income     Mixed race / Mid-low income 
+                             42                              34 
+       Mixed race / High income             Asian / High income 
+                             27                              25 
+        White / Mid-high income          Asian / Mid-low income 
+                             17                               8 
+             Black / Low income  White / Older / Mid-low income 
+                              8                               8 
+   Black / Younger / Low income      Hispanic / Mid-high income 
+                              7                               5 
+
+=== ZCTA counts ===
+Included ZCTAs (clustered): 302 
+Excluded ZCTAs: 7 
+
+Cluster sizes:
+
+ 1  2  3  4  5  6  7  8  9 10 11 12 
+71 17 34  7  8  8 27 50 25  8 42  5 
+
+=== Excluded ZCTAs check ===
+# A tibble: 2 × 18
+  excluded_flag total_pop pct_white pct_black pct_asian pct_hispanic median_age poverty_rate
+* <chr>             <dbl>     <dbl>     <dbl>     <dbl>        <dbl>      <dbl>        <dbl>
+1 excluded              0         0         0         0            0          0        0.571
+2 included              0         0         0         0            0          0        0    
+  median_income unemployment_rate education_low uninsured_rate language_isolation
+*         <dbl>             <dbl>         <dbl>          <dbl>              <dbl>
+1         0.857             0.143             0          0.286                  0
+2         0                 0                 0          0                      0
+  disability_rate housing_overcrowding owner_burden_rate renter_burden_rate
+*           <dbl>                <dbl>             <dbl>              <dbl>
+1           0.286                0.714                 1              0.714
+2           0                    0                     0              0    
+  outdoor_worker_rate
+*               <dbl>
+1               0.143
+2               0    
