@@ -1,0 +1,23 @@
+cluster,rate_per_10000_yr,true_multiplier,cluster_label,vulnerability_score
+1,0.005955837,1.057030656,White / Mid-low income,2.106048183
+2,0.009472549,1.495927048,Hispanic / Younger / Low income,15.29293183
+3,0.009441392,1.55870707,Hispanic / Younger / Low income,16.85396745
+4,0.005631851,0.892628374,White / Older / Mid-low income,-4.313006829
+5,0.006261633,0.866919371,White / Older / Mid-high income,-5.42270396
+6,0.004622725,0.743279297,White / High income,-11.26555628
+7,0.006586439,1.107840287,White / Older / Low income,3.888768367
+8,0.006412806,1.019822672,White / Mid-low income,0.745336304
+9,0.006097861,0.948939106,White / Older / Mid-low income,-1.99011847
+10,0.007047341,1.114514141,White & Hispanic / Mid-low income,4.116830963
+11,0.007364924,1.155243893,Mixed race / Mid-low income,5.479744227
+12,0.006026639,0.908748768,White / Mid-high income,-3.633377686
+13,0.007767869,1.188676865,Hispanic / Younger / Mid-low income,6.563049611
+14,0.004963593,0.750168444,White / Older / High income,-10.91523392
+15,0.006739974,1.072881404,Hispanic / Younger / Mid-low income,2.671226501
+16,0.005594971,0.885224864,Mixed race / High income,-4.629259083
+17,0.008089935,1.248629009,Hispanic / Younger / Low income,8.431457493
+18,0.005352885,0.869299538,White / Mid-high income,-5.318593938
+19,0.00642995,0.983941782,Hispanic / Mid-high income,-0.614705803
+20,0.004613109,0.751838333,White / High income,-10.83080223
+21,0.006671701,0.916379164,White / Younger / Mid-low income,-3.315876236
+22,0.005643091,0.902387226,White / Mid-high income,-3.900126487
