@@ -1,0 +1,58 @@
+====================================================================
+POISSON INLA - SUPPRESSED 2018 ED DATA (6 SES predictors)
+INLA version:
+[1] ‘26.6.7’
+
+R version:
+[1] "R version 4.4.3 (2025-02-28 ucrt)"
+
+Reference cluster (lowest vulnerability): 24 
+====================================================================
+
+Time used:
+    Pre = 2.52, Running = 24.9, Post = 3.03, Total = 30.4 
+Fixed effects:
+                       mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)         -12.233 0.034    -12.299  -12.233    -12.166 -12.233   0
+poverty_rate          1.581 0.057      1.468    1.581      1.694   1.581   0
+pct_hispanic         -0.841 0.028     -0.896   -0.841     -0.786  -0.841   0
+pct_black            -0.062 0.057     -0.174   -0.062      0.051  -0.062   0
+outdoor_worker_rate   2.750 0.052      2.648    2.750      2.853   2.750   0
+pct_age65             2.920 0.057      2.809    2.920      3.031   2.920   0
+uninsured_rate        0.218 0.134     -0.045    0.218      0.481   0.218   0
+day_of_weekMon        0.062 0.032     -0.001    0.062      0.125   0.062   0
+day_of_weekTue        0.024 0.047     -0.069    0.024      0.118   0.024   0
+day_of_weekWed        0.052 0.055     -0.057    0.052      0.161   0.052   0
+day_of_weekThu        0.046 0.055     -0.063    0.046      0.154   0.046   0
+day_of_weekFri        0.092 0.047     -0.001    0.092      0.185   0.092   0
+day_of_weekSat        0.031 0.032     -0.032    0.031      0.094   0.031   0
+
+Random effects:
+  Name	  Model
+    doy RW2 model
+
+Model hyperparameters:
+                   mean   sd 0.025quant 0.5quant 0.975quant  mode
+Precision for doy 0.003 0.00      0.002    0.003      0.004 0.002
+
+Deviance Information Criterion (DIC) ...............: 403978.08
+Deviance Information Criterion (DIC, saturated) ....: 328257.57
+Effective number of parameters .....................: 146.97
+
+Watanabe-Akaike information criterion (WAIC) ...: 398697.87
+Effective number of parameters .................: 506.88
+
+Marginal log-Likelihood:  -203122.88 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+
+====================================================================
+
+DIC:
+[1] 403978.1
+
+WAIC:
+[1] 398697.9

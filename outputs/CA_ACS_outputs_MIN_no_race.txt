@@ -1,0 +1,91 @@
+=== Correlations ===
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.9406  0.9498  0.9589  0.9604  0.9703  0.9817 
+
+
+=== Absolute Differences ===
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+0.007039 0.010027 0.013015 0.011653 0.013959 0.014904 
+
+
+Selected run: 1 out of 3 
+
+
+=== ZCTA counts ===
+Total CA ZCTAs: 1763 
+ACS included: 1741  | excluded: 22 
+
+Missing ZCTA codes (in reference list, not in acs_clean):
+ [1] "90071" "90079" "90090" "90095" "90506" "90747" "90831" "91371" "91608" "92132" "92222" "92338" "92364" "93064"
+[15] "93410" "93633" "93943" "94850" "95250" "95364" "95915" "96155"
+
+
+=== Cluster label counts ===
+
+                      White / High income           Hispanic / Younger / Low income 
+                                      319                                       216 
+                  White / Mid-high income                White / Older / Low income 
+                                      186                                       165 
+                   White / Mid-low income                 Hispanic / Mid-low income 
+                                      159                                       130 
+           White / Older / Mid-low income        Hispanic & White / Mid-high income 
+                                      121                                       119 
+        Hispanic & White / Mid-low income               White / Older / High income 
+                                      117                                        92 
+                       White / Low income Mixed racial composition / Mid-low income 
+                                       76                                        41 
+
+
+=== PReMiuM Posterior Inclusion Probabilities (mean rho, averaged across runs) ===
+       median_income   language_isolation        education_low         poverty_rate       uninsured_rate 
+           0.9989566            0.9987744            0.9987277            0.9973254            0.9970611 
+ outdoor_worker_rate      disability_rate            pct_age65            pct_age17 housing_overcrowding 
+           0.9967839            0.9965636            0.9961531            0.9946667            0.9934489 
+    alt_housing_rate   renter_burden_rate 
+           0.9900367            0.9774173 
+
+
+=== Pairwise Correlations (|r| > 0.6) ===
+                var1          var2 correlation
+1      median_income  poverty_rate  -0.7289665
+2 language_isolation education_low   0.6735632
+
+
+=== Variance Inflation Factor Check ===
+                                 variable      VIF
+renter_burden_rate     renter_burden_rate 3.844905
+poverty_rate                 poverty_rate 3.841472
+housing_overcrowding housing_overcrowding 3.830329
+pct_age65                       pct_age65 3.809562
+disability_rate           disability_rate 3.778131
+pct_age17                       pct_age17 3.771312
+outdoor_worker_rate   outdoor_worker_rate 3.762379
+alt_housing_rate         alt_housing_rate 3.738382
+uninsured_rate             uninsured_rate 3.702919
+median_income               median_income 3.658558
+language_isolation     language_isolation 3.280579
+education_low               education_low 3.196647
+
+
+=== Missingness summary ===
+               variable n_missing pct_missing n_zero pct_zero
+1         median_income       114        6.55      0     0.00
+2    renter_burden_rate        68        3.91     74     4.42
+3   outdoor_worker_rate        20        1.15     92     5.35
+4  housing_overcrowding        19        1.09    753    43.73
+5      alt_housing_rate        14        0.80    225    13.03
+6          poverty_rate        13        0.75     76     4.40
+7        uninsured_rate         9        0.52    104     6.00
+8       disability_rate         9        0.52     34     1.96
+9         education_low         1        0.06    101     5.80
+10            pct_age17         0        0.00     91     5.23
+11            pct_age65         0        0.00     47     2.70
+12   language_isolation         0        0.00    280    16.08
+
+
+=== Completeness by ZCTA population ===
+# A tibble: 2 × 4
+  complete mean_pop median_pop     n
+  <lgl>       <dbl>      <dbl> <int>
+1 FALSE        526.        165   135
+2 TRUE       24327.      20429  1606
