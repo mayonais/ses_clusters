@@ -9,12 +9,14 @@ library(tidyr)
 library("PReMiuM")
 library(sf)
 library(tigris)
-library(car) # for vif()
 
 year <- 2018
 survey <- "acs5"
 state <- "CA"
 county <- "Los Angeles"
+
+file_name <- "Los Angeles"
+folder_name <- "Los_Angeles_normal_none"
 
 options(tigris_use_cache = TRUE)
 
@@ -31,7 +33,7 @@ acs <- get_acs(
   geography = "zcta",
   survey = survey,
   year = year,
-  state = state, # always pull statewide, filter by county after
+  state = state, 
   variables = c(
     total_pop = "B01003_001",
     
@@ -54,15 +56,15 @@ acs <- get_acs(
     age65_female3 = "B01001_046", age65_female4 = "B01001_047",
     age65_female5 = "B01001_048", age65_female6 = "B01001_049",
     
-    #elderly_total = "B09021_022", elderly_alone = "B09021_023",
+    elderly_total = "B09021_022", elderly_alone = "B09021_023",
     
     median_income = "B19013_001", 
     
     poverty = "B17001_002",
     poverty_total = "B17001_001",
     
-    #unemployment = "B23025_005",
-    #labor_force = "B23025_003",
+    unemployment = "B23025_005",
+    labor_force = "B23025_003",
     
     total_education = "B15003_001",
     edu_001 = "B15003_002", edu_002 = "B15003_003", edu_003 = "B15003_004",
@@ -95,11 +97,6 @@ acs <- get_acs(
     dis_007 = "B18101_023", dis_008 = "B18101_026", dis_009 = "B18101_029",
     dis_010 = "B18101_032", dis_011 = "B18101_035", dis_012 = "B18101_038",
     
-    #owner_occ = "B25106_002",
-    #owner_30_1 = "B25106_006", owner_30_2 = "B25106_010",
-    #owner_30_3 = "B25106_014", owner_30_4 = "B25106_018",
-    #owner_30_5 = "B25106_022",
-    
     renter_occ = "B25106_024",
     renter_30_1 = "B25106_028", renter_30_2 = "B25106_032",
     renter_30_3 = "B25106_036", renter_30_4 = "B25106_040",
@@ -108,25 +105,19 @@ acs <- get_acs(
     housing_crowding_total = "B25014_001",
     crowd_001 = "B25014_007", crowd_002 = "B25014_013",
     
-    #vehicles_total = "B08201_001",
-    #no_vehicles = "B08201_002",
-    
     housing_units_total = "B25024_001", 
     boat_rv_van = "B25024_011", mobile_home = "B25024_010",
     
-    #phone_total = "B25043_001",
-    #phone_owner_none = "B25043_007",
-    #phone_renter_none = "B25043_016",
+    phone_total = "B25043_001",
+    phone_owner_none = "B25043_007",
+    phone_renter_none = "B25043_016",
     
-    #yrbuilt_total = "B25034_001",
-    #built_1970_79 = "B25034_007",
-    #built_1960_69 = "B25034_008",
-    #built_1950_59 = "B25034_009",
-    #built_1940_49 = "B25034_010",
-    #built_pre1939 = "B25034_011",
-    
-    #tenure_total = "B25003_001",
-    #renter_occ_tenure = "B25003_003",
+    yrbuilt_total = "B25034_001",
+    built_1970_79 = "B25034_007",
+    built_1960_69 = "B25034_008",
+    built_1950_59 = "B25034_009",
+    built_1940_49 = "B25034_010",
+    built_pre1939 = "B25034_011",
     
     outdoor_total = "C24050_001",
     agri_forestry = "C24050_002",
@@ -142,9 +133,8 @@ acs_clean <- acs %>% filter(total_popE > 0) %>% mutate(total_popE,
     pct_hispanic = hispanicE / race_totalE,
     
     poverty_rate = povertyE / poverty_totalE,
-    #unemployment_rate = unemploymentE / labor_forceE,
-    #vehicle_rate = no_vehiclesE / vehicles_totalE,
-    
+    unemployment_rate = unemploymentE / labor_forceE,
+
     pct_age17 = (age17_male1E + age17_male2E + age17_male3E + age17_male4E +
                    age17_female1E + age17_female2E + age17_female3E + age17_female4E) 
     / total_pop_sexageE,
@@ -154,7 +144,7 @@ acs_clean <- acs %>% filter(total_popE > 0) %>% mutate(total_popE,
                    age65_female3E + age65_female4E + age65_female5E + age65_female6E) 
     / total_pop_sexageE,
     
-    #elderly_alone_rate = elderly_aloneE / elderly_totalE, 
+    elderly_alone_rate = elderly_aloneE / elderly_totalE, 
     
     education_low =
       (edu_001E + edu_002E + edu_003E + edu_004E + edu_005E + edu_006E +
@@ -177,93 +167,107 @@ acs_clean <- acs %>% filter(total_popE > 0) %>% mutate(total_popE,
       total_disabilityE,
     
     housing_overcrowding = (crowd_001E + crowd_002E) / housing_crowding_totalE,
-    
-    #owner_burden_rate = (owner_30_1E + owner_30_2E + owner_30_3E +
-    #     owner_30_4E + owner_30_5E) / owner_occE,
-    
+  
     renter_burden_rate = (renter_30_1E + renter_30_2E + renter_30_3E +
          renter_30_4E + renter_30_5E) / renter_occE,
     
     alt_housing_rate = (mobile_homeE + boat_rv_vanE) / housing_units_totalE,
 
-    #no_phone_rate = (phone_owner_noneE + phone_renter_noneE) / phone_totalE,   
-    #renter_rate = renter_occ_tenureE / tenure_totalE,
-    
-    #old_housing_rate = (built_1970_79E + built_1960_69E + built_1950_59E +
-    #                      built_1940_49E + built_pre1939E) / yrbuilt_totalE,
+    no_phone_rate = (phone_owner_noneE + phone_renter_noneE) / phone_totalE,   
+
+    old_housing_rate = (built_1970_79E + built_1960_69E + built_1950_59E +
+                          built_1940_49E + built_pre1939E) / yrbuilt_totalE,
     
     outdoor_worker_rate = (agri_forestryE + construction_indE) / outdoor_totalE
    ) %>%
   mutate(across(where(is.numeric), ~ifelse(is.nan(.), NA, .))) %>% #
   select(GEOID, total_popE, pct_white, pct_black, pct_asian, pct_hispanic,
-         poverty_rate, median_incomeE,
+         poverty_rate, median_incomeE, unemployment_rate, no_phone_rate,
          education_low, uninsured_rate, language_isolation, disability_rate, 
-         outdoor_worker_rate, pct_age17, pct_age65,
-         renter_burden_rate, housing_overcrowding, alt_housing_rate) %>%
+         outdoor_worker_rate, pct_age17, pct_age65, elderly_alone_rate,
+         renter_burden_rate, housing_overcrowding, alt_housing_rate, old_housing_rate) %>%
   rename(median_income = median_incomeE, total_pop = total_popE)
 
 vars <- c("pct_white", "pct_black", "pct_asian", "pct_hispanic",
   "poverty_rate", "renter_burden_rate", "housing_overcrowding",
-  "median_income", "education_low", "pct_age17",
+  "median_income", "education_low", "pct_age17", "no_phone_rate",
   "pct_age65", "uninsured_rate", "language_isolation", "disability_rate",
-  "outdoor_worker_rate",
-  "alt_housing_rate")
+  "outdoor_worker_rate", "unemployment_rate", "elderly_alone_rate",
+  "alt_housing_rate", "old_housing_rate")
 
 rm(acs)
+gc()
 
 # ===========================================================================
 # COUNTY
 # =======================================================================
 
-#county_boundary <- tigris::counties(state = state, cb = TRUE) %>%
-#  filter(NAME == county) %>%
-#  st_make_valid() 
+boundary <- tigris::counties(state = state, cb = TRUE) %>%
+  filter(NAME == county) %>% st_make_valid() 
 
-#zcta_shapes <- zctas(cb = TRUE, year = 2020) %>%
-#  st_transform(st_crs(county_boundary)) %>% 
-#  st_make_valid()
+zcta_shapes <- zctas(cb = TRUE, year = 2020) %>%
+  st_transform(st_crs(boundary)) %>% st_make_valid()
 
-#county_zctas <- zcta_shapes %>%
-#  st_filter(county_boundary) %>%
-#  pull(ZCTA5CE20) 
+county_zctas <- zcta_shapes %>% st_filter(boundary) %>% pull(ZCTA5CE20) 
+acs_clean <- acs_clean %>% filter(GEOID %in% county_zctas) 
 
-#acs_clean <- acs_clean %>%
-#  filter(GEOID %in% county_zctas) 
-
-#nrow(acs_clean)
-#stopifnot(all(acs_clean$GEOID %in% county_zctas))
+nrow(acs_clean)
+length(county_zctas)
+gc()
 
 # ===========================================================================
 # STATE
 # =======================================================================
 
-ca_zcta_codes <- read_delim("datasets/2018_Gaz_zcta_national.txt", delim = "\t") %>%
-  janitor::clean_names() %>%
-  mutate(geoid = as.character(geoid))
+#boundary <- tigris::states(cb = TRUE) %>%
+#  filter(STUSPS == state) %>%
+#  st_make_valid()
 
-ca_zcta_codes <- ca_zcta_codes %>%
-  filter(as.numeric(geoid) >= 90001 & as.numeric(geoid) <= 96162) %>%
-  pull(geoid)
+#zcta_shapes <- zctas(cb = TRUE, year = 2020) %>%
+#  st_transform(st_crs(boundary)) %>%
+#  st_make_valid()
 
-acs_clean <- acs_clean %>% filter(GEOID %in% ca_zcta_codes)
+#state_zctas <- zcta_shapes %>%
+#  st_filter(boundary) %>%
+#  pull(ZCTA5CE20)
 
-nrow(acs_clean)
-gc()
+#acs_clean <- acs_clean %>%
+#  filter(GEOID %in% state_zctas)
+#nrow(acs_clean)
 
 # =======================================================================
 # PROFILE REGRESSION (PReMiuM)
 # ========================================================================
 
+# xModel = Normal
+library(e1071)
+data.frame(Variable = vars, 
+           Skewness = sapply(pr_data[vars], skewness, na.rm = TRUE, type = 2)) %>%
+  arrange(desc(abs(Skewness)))
+
+pr_data <- acs_clean %>% st_drop_geometry() %>% select(GEOID, all_of(vars)) %>%
+  mutate(alt_housing_rate = log1p(alt_housing_rate),
+    disability_rate = log1p(disability_rate), pct_age65 = log1p(pct_age65),
+    unemployment_rate = log1p(unemployment_rate), pct_black = log1p(pct_black),
+    housing_overcrowding = log1p(housing_overcrowding),
+    poverty_rate = log1p(poverty_rate), no_phone_rate = log1p(no_phone_rate),
+    elderly_alone_rate = log1p(elderly_alone_rate), pct_asian = log1p(pct_asian),
+    outdoor_worker_rate = log1p(outdoor_worker_rate),
+    median_income = log(median_income)) %>%
+  mutate(across(all_of(vars), scale)) %>% as.data.frame()
+
+# -------------------------------------------------------------------------------
+
 pr_data <- acs_clean %>%
   st_drop_geometry() %>%
   select(GEOID, all_of(vars)) %>%
   mutate(across(all_of(vars), as.numeric)) %>%
-  mutate(across(all_of(vars), ~ ntile(.x, 4))) %>%
+  mutate(across(all_of(vars), ~ ntile(.x, 4))) %>% 
   as.data.frame()
 
 # LOAD EXISTING RUNS IF PRESENT
-acs_diss_path <- paste0("rds/", gsub(" ", "_", state), "_ACS_diss_mats_MIN.rds")
-acs_rho_path <- paste0("rds/", gsub(" ", "_", state), "_ACS_rho_list_MIN.rds")
+acs_diss_path <- file.path("create_cluster outputs", folder_name, paste0(file_name, "_ACS_diss_mats.rds"))
+acs_rho_path <- file.path("create_cluster outputs", folder_name, paste0(file_name, "_ACS_rho_list.rds"))
 
 acs_diss_mats <- if (file.exists(acs_diss_path)) readRDS(acs_diss_path) else list()
 acs_rho_list <- if (file.exists(acs_rho_path))  readRDS(acs_rho_path)  else list()
@@ -281,29 +285,34 @@ for (i in (n_existing + 1):(n_existing + n_new)) {
   
   prof <- profRegr(
     excludeY = TRUE,
-    xModel = "Discrete",
+    xModel = "Normal", # Discrete
     data = pr_data %>% select(all_of(vars)),
     covNames = vars,
-    varSelectType = "Continuous",
+    varSelectType = "None", # BinaryCluster
     output = output_stem,
     nBurn = 2000,
     nSweeps = 10000,
-    nProgress = 1)
+    nProgress = 1
+  )
   
   acs_diss_mats[[i]] <- calcDissimilarityMatrix(prof)
-  
   rho_samples <- read.table(paste0(output_stem, "_rho.txt"))
-  colnames(rho_samples) <- vars
-  acs_rho_list[[i]] <- colMeans(rho_samples)}
+  
+  # keep only variables that have rho estimates
+  rho_vars <- vars[seq_len(ncol(rho_samples))]
+  colnames(rho_samples) <- rho_vars
+  
+  acs_rho_list[[i]] <- colMeans(rho_samples)
+}
 
 saveRDS(acs_diss_mats, acs_diss_path)
-saveRDS(acs_rho_list,  acs_rho_path)
+saveRDS(acs_rho_list, acs_rho_path)
 
 # ==========================================================================
 # CHECK STABILITY
 # ========================================================================
 
-n_runs <- 3
+#n_runs <- 3
 v_list <- vector("list", n_runs)
 for (i in 1:n_runs) {v_list[[i]] <- as.numeric(acs_diss_mats[[i]]$disSimMat)}
 
@@ -332,15 +341,13 @@ rm(rho_samples)
 clusObj <- calcOptimalClustering(acs_diss_mats[[best_run]])
 pr_data$cluster <- clusObj$clustering
 
-saveRDS(pr_data, "rds/pr_data_with_clusters_MIN.rds")
+acs_diss_path <- saveRDS(pr_data, file = file.path(
+  "create_cluster outputs", folder_name, paste0(file_name, "_pr_data_with_clusters.rds")))
 rm(clusObj)
 
-cluster_profiles <- acs_clean %>% 
-  st_drop_geometry() %>%
+cluster_profiles <- acs_clean %>% st_drop_geometry() %>%
   left_join(pr_data %>% select(GEOID, cluster), by = "GEOID") %>%
-  group_by(cluster) %>% 
-  summarise(across(all_of(c(vars)), #"pct_white", "pct_black", "pct_asian", "pct_hispanic"
-                   ~ median(.x, na.rm = TRUE)), n = n())
+  group_by(cluster) %>% summarise(across(all_of(c(vars)), ~ median(.x, na.rm = TRUE)), n = n())
 
 income_breaks <- quantile(acs_clean$median_income, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
 age65_breaks <- quantile(acs_clean$pct_age65, probs = 0.75, na.rm = TRUE)
@@ -381,7 +388,7 @@ cluster_profiles <- cluster_profiles %>%
   ) %>% ungroup()
 
 cluster_labels <- setNames(cluster_profiles$label,
-  as.character(cluster_profiles$cluster))
+                           as.character(cluster_profiles$cluster))
 
 # =======================================================================
 # SAVE ED-READY DATASET
@@ -400,52 +407,42 @@ clustered_zctas <- clustered_zctas %>% left_join(
   mutate(across(all_of(vars), ~ if_else(is.na(.x), get(paste0(cur_column(), "_cluster_median")), .x))) %>%
   select(-ends_with("_cluster_median"))
 
-saveRDS(clustered_zctas, file = paste0(
-  "ed_analysis_ready/", gsub(" ", "_", state), "_ACS_zcta_clustered_for_ED_MIN.rds"))
+saveRDS(clustered_zctas, file = file.path(
+  "create_cluster outputs", folder_name, paste0(file_name, "_ACS_zcta_clustered_for_ED.rds")))
 
-write.csv(clustered_zctas, file = paste0(
-  "ed_analysis_ready/", gsub(" ", "_", state), "_ACS_zcta_clustered_for_ED_MIN.csv"),
-          row.names = FALSE)
+write.csv(clustered_zctas, file = file.path("create_cluster outputs", folder_name,
+  paste0(file_name, "_ACS_zcta_clustered_for_ED.csv")))
 
 # ===========================================================================
 # MAP
 # =========================================================================
 
-zcta_cache_path <- "rds/zcta_shapes_2010_national.rds"
+zcta_cropped <- st_intersection(zcta_shapes, boundary)
 
-if (!file.exists(zcta_cache_path)) {
-  cat("No cached 2010 ZCTA shapefile found — downloading once\n")
-  zcta_shapes_acs <- zctas(cb = TRUE, year = 2010)
-  saveRDS(zcta_shapes_acs, zcta_cache_path)} else {
-    zcta_shapes_acs <- readRDS(zcta_cache_path)}
+zcta_cropped <- zcta_cropped %>% left_join(clustered_zctas %>%
+      st_drop_geometry() %>% select(GEOID, cluster, cluster_label),
+    by = c("ZCTA5CE20" = "GEOID"))
 
-state_boundary <- tigris::states(cb = TRUE) %>%
-  filter(STUSPS == state) %>% st_make_valid()
-
-zcta_shapes_acs <- zcta_shapes_acs %>%
-  filter(ZCTA5 %in% clustered_zctas$GEOID) %>%
-  st_transform(st_crs(state_boundary)) %>% st_make_valid()
-
-zcta_shapes_acs <- st_intersection(zcta_shapes_acs, state_boundary) %>%
-  left_join(clustered_zctas %>% st_drop_geometry() %>% select(GEOID, cluster, cluster_label),
-    by = c("ZCTA5" = "GEOID"))
-
-map_acs <- ggplot(state_boundary) +
+map <- ggplot(boundary) +
   geom_sf(fill = "grey90", color = "white", linewidth = 0.1) +
-  geom_sf(data = zcta_shapes_acs, aes(fill = cluster_label),
-          color = "white", linewidth = 0.1) + coord_sf(
-            xlim = c(st_bbox(state_boundary)["xmin"], st_bbox(state_boundary)["xmax"]),
-            ylim = c(st_bbox(state_boundary)["ymin"], st_bbox(state_boundary)["ymax"]),
-            expand = FALSE  ) +
+  geom_sf(data = zcta_cropped, aes(fill = cluster_label), color = "white", linewidth = 0.1) +
+  coord_sf(expand = FALSE) +
   scale_fill_viridis_d(option = "turbo", na.value = "transparent", drop = FALSE) +
-  labs(title = paste("Socioeconomic Clusters of", state, "ZCTAs")) +
-  theme_minimal() + theme(legend.position = "right", legend.direction = "vertical",
-    legend.key.size = unit(0.4, "cm"), legend.text = element_text(size = 7),
-    legend.title = element_text(size = 9)) + guides(fill = guide_legend(ncol = 1))
+  labs(title = paste("Socioeconomic Clusters of", file_name, "ZCTAs")) +
+  theme_minimal() + theme(aspect.ratio = 1.6,
+        legend.position = "right",
+        legend.key.size = unit(0.35, "cm"),
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8),
+        plot.title = element_text(margin = margin(b = 20)),
+        axis.text = element_text(size = 6),
+        axis.title = element_text(size = 7)) +
+  guides(fill = guide_legend(ncol = 1))
 
-ggsave(filename = paste0("maps/", state, "_ACS_clusters_MIN.png"),
-       plot = map_acs, width = 8, height = 6, dpi = 300)
-rm(map_acs)
+ggsave(filename = paste0("maps/", gsub(" ", "_", folder_name), "_clusters.png"),
+  plot = map, width = 8, height = 6, dpi = 300)
+
+rm(map)
 rm(clustered_zctas)
 gc()
 
@@ -468,20 +465,8 @@ cor_long_acs <- pr_data %>% select(all_of(vars)) %>%
   select(var1, var2, correlation) %>% arrange(desc(abs(correlation))) %>%
   filter(abs(correlation) > 0.6, !is.nan(correlation)) %>% as.data.frame()
 
-#vif_results <- data.frame(variable = vars, VIF = sapply(vars, function(v) {
-#  model <- lm(as.formula(paste(v, "~ .")), data = pr_data %>% select(all_of(vars)))
-#  max(vif(model), na.rm = TRUE)
-#})) %>% arrange(desc(VIF))
-pr_data$dummy_outcome <- rnorm(nrow(clustered_zctas))
-model <- lm(dummy_outcome ~ ., data = pr_data[, c("dummy_outcome", vars)])
-vif_results <- data.frame(variable = names(vif(model)), VIF = vif(model)) %>%
-  arrange(desc(VIF))
-
 rho_avg_acs <- colMeans(rho_summary_acs[, vars])
-
-total_included <- nrow(pr_data)
-total_excluded <- length(setdiff(acs_clean$GEOID, pr_data$GEOID))
-missing_zcta_codes <- setdiff(ca_zcta_codes, acs_clean$GEOID)
+missing_zcta_codes <- setdiff(county_zctas, acs_clean$GEOID)
 
 missingness_summary <- lapply(vars, function(v) {
   x <- acs_clean[[v]]
@@ -491,13 +476,16 @@ missingness_summary <- lapply(vars, function(v) {
     pct_zero = round(mean(x == 0, na.rm = TRUE) * 100, 2))}) %>%
   bind_rows() %>% arrange(desc(pct_missing))
 
-saveRDS(rho_summary_acs, paste0("rds/", state, "_ACS_rho_by_run_MIN.rds"))
-saveRDS(acs_diss_mats, paste0("rds/", state, "_ACS_diss_mats_MIN.rds"))
-saveRDS(best_run, paste0("rds/", state, "_ACS_best_run_MIN.rds"))
+saveRDS(rho_summary_acs, file = file.path(
+  "create_cluster outputs", folder_name, paste0(file_name, "_ACS_rho_by_run.rds")))
+saveRDS(best_run, file = file.path(
+  "create_cluster outputs", folder_name, paste0(file_name, "_ACS_best_run.rds")))
+rm(acs_diss_mats)
 
 # ------ TXT FILE ------------------------------------------------------
 
-sink(paste0("outputs/", state, "_ACS_outputs_MIN.txt"))
+sink(file.path("create_cluster outputs", folder_name, paste0(file_name, "_ACS_outputs.txt")))
+
 cat("=== Correlations ===\n")
 print(summary(cor_vals))
 cat("\n\n=== Absolute Differences ===\n")
@@ -505,8 +493,8 @@ print(summary(diff_vals))
 cat("\n\nSelected run:", best_run, "out of", n_runs, "\n")
 
 cat("\n\n=== ZCTA counts ===\n")
-cat("Total CA ZCTAs:", length(ca_zcta_codes), "\n")
-cat("ACS included:", nrow(acs_clean), " | excluded:", length(ca_zcta_codes) - nrow(acs_clean), "\n")
+cat("Total CA ZCTAs:", length(county_zctas), "\n")
+cat("ACS included:", nrow(acs_clean), " | excluded:", length(county_zctas) - nrow(acs_clean), "\n")
 cat("\nMissing ZCTA codes (in reference list, not in acs_clean):\n")
 print(missing_zcta_codes)
 
@@ -517,8 +505,6 @@ cat("\n\n=== PReMiuM Posterior Inclusion Probabilities (mean rho, averaged acros
 print(sort(rho_avg_acs, decreasing = TRUE))
 cat("\n\n=== Pairwise Correlations (|r| > 0.6) ===\n")
 print(cor_long_acs)
-cat("\n\n=== Variance Inflation Factor Check ===\n")
-print(vif_results)
 cat("\n\n=== Missingness summary ===\n")
 print(missingness_summary)
 
@@ -531,7 +517,5 @@ print(acs_clean %>% st_drop_geometry() %>%
               n = n()))
 sink()
 
-rm(vif_check_acs)
-rm(acs_diss_mats)
 rm(acs_rho_list)
 gc()
