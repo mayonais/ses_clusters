@@ -88,14 +88,6 @@ capture.output({
   cat("\nWAIC:\n")
   print(poisson_inla$waic$waic)
   
-  cat("\n====================================================================\n")
-  cat("\nRANDOM EFFECT STRUCTURE:\n")
-  print(names(poisson_inla$summary.random))
-  cat("\nSHARED ACUTE HEAT RW2 SUMMARY:\n")
-  print(head(poisson_inla$summary.random$acute_heat_group))
-  cat("\nCLUSTER-SPECIFIC ACUTE HEAT RW2 SUMMARY:\n")
-  print(head(poisson_inla$summary.random$acute_heat_cluster))
-  
   poisson_p_table <- as.data.frame(poisson_inla$summary.fixed)
   poisson_p_table$term <- rownames(poisson_p_table)
   
