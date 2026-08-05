@@ -5,7 +5,7 @@ library(dplyr)
 library(tidyr)
 
 file_name <- "Los Angeles"
-area <- "individual_SES/Los Angeles"
+area <- "Los Angeles"
 folder_name <- "Los_Angeles_discrete_none"
 
 clustered_zctas <- readRDS(paste0(
@@ -44,6 +44,21 @@ cluster_vuln <- clustered_zctas %>%
 
 reference_cluster <- as.character(cluster_vuln$cluster[1])
 
+# ----- CHRONIC AND ACUTE HEAT VARIABLES (CHS-style) -------------------------
+
+heat_mean <- mean(daily_ed$Max_HI_Value, na.rm = TRUE)
+heat_sd <- sd(daily_ed$Max_HI_Value, na.rm = TRUE)
+
+daily_ed <- daily_ed %>%
+  mutate(heat_z = (Max_HI_Value - heat_mean) / heat_sd) %>%
+  group_by(zip) %>% mutate(
+    chronic_heat = mean(heat_z, na.rm = TRUE),
+    acute_heat = heat_z - chronic_heat) %>% ungroup()
+
+acute_heat_group <- inla.group(daily_ed$acute_heat, n = 50)
+acute_heat_group <- match(acute_heat_group, unique(acute_heat_group))
+daily_ed$acute_heat_group <- acute_heat_group
+
 # -----------------------------------------------------------------------------
 
 daily_ed <- daily_ed %>%
@@ -74,7 +89,8 @@ capture.output({
   cat("====================================================================\n\n")
   
   poisson_inla <- inla(
-    D2 ~ cluster + month + day_of_week + 
+    D2 ~ cluster + chronic_heat + month + day_of_week + 
+      f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE) +
       f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
     family = "poisson", data = daily_ed, E = Population,
     
@@ -87,6 +103,12 @@ capture.output({
   print(poisson_inla$dic$dic)
   cat("\nWAIC:\n")
   print(poisson_inla$waic$waic)
+  cat("\n====================================================================\n")
+  cat("\nRANDOM EFFECT STRUCTURE:\n")
+  print(names(nb_inla$summary.random))
+  
+  cat("\nSHARED ACUTE HEAT RW2 SUMMARY:\n")
+  print(head(nb_inla$summary.random$acute_heat_group))
   
   poisson_p_table <- as.data.frame(poisson_inla$summary.fixed)
   poisson_p_table$term <- rownames(poisson_p_table)
@@ -138,7 +160,6 @@ capture.output({
   nb_p_table$term <- rownames(nb_p_table)
   
   cat("\n====================================================================\n")
-  cat("\nRANDOM EFFECT STRUCTURE:\n")
   print(names(nb_inla$summary.random))
   
   saveRDS(nb_p_table, paste0("create_cluster outputs/", folder_name, "/",
