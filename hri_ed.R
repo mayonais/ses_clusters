@@ -76,7 +76,7 @@ daily_ed <- daily_ed %>% select(-heat_z)
 head(daily_ed)
 gc()
 
-# ------ POISSON ----------------------------------------------------------
+# ------ POISSON (only with heat) ----------------------------------------------------------
 
 capture.output({
   cat("====================================================================\n")
@@ -103,12 +103,6 @@ capture.output({
   print(poisson_inla$dic$dic)
   cat("\nWAIC:\n")
   print(poisson_inla$waic$waic)
-  cat("\n====================================================================\n")
-  cat("\nRANDOM EFFECT STRUCTURE:\n")
-  print(names(poisson_inla$summary.random))
-  
-  cat("\nSHARED ACUTE HEAT RW2 SUMMARY:\n")
-  print(head(poisson_inla$summary.random$acute_heat_group))
   
   poisson_p_table <- as.data.frame(poisson_inla$summary.fixed)
   poisson_p_table$term <- rownames(poisson_p_table)
@@ -160,14 +154,6 @@ capture.output({
   
   nb_p_table <- as.data.frame(nb_inla$summary.fixed)
   nb_p_table$term <- rownames(nb_p_table)
-  
-  cat("\n====================================================================\n")
-  cat("\nRANDOM EFFECT STRUCTURE:\n")
-  print(names(nb_inla$summary.random))
-  cat("\nSHARED ACUTE HEAT RW2 SUMMARY:\n")
-  print(head(nb_inla$summary.random$acute_heat_group))
-  
-  cat("\n====================================================================\n")
   
   saveRDS(nb_p_table, paste0("create_cluster outputs/", folder_name, "/",
                              file_name, "_suppressed_INLA_nb_coef_table.rds"))
