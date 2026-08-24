@@ -5,8 +5,7 @@ library(dplyr)
 library(tidyr)
 
 file_name <- "Los Angeles"
-area <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none"
+folder_name <- "Los_Angeles_discrete_none_HEAT"
 
 clustered_zctas <- readRDS(paste0(
   "create_cluster outputs/", folder_name, "/", file_name, "_ACS_zcta_clustered_for_ED.rds"))
@@ -50,10 +49,11 @@ heat_mean <- mean(daily_ed$Max_HI_Value, na.rm = TRUE)
 heat_sd <- sd(daily_ed$Max_HI_Value, na.rm = TRUE)
 
 daily_ed <- daily_ed %>%
-  mutate(heat_z = (Max_HI_Value - heat_mean) / heat_sd) %>%
+  mutate(heat_z = (Max_HI_Value - heat_mean) / heat_sd) %>% # daily standardized heat
   group_by(zip) %>% mutate(
-    chronic_heat = mean(heat_z, na.rm = TRUE),
-    acute_heat = heat_z - chronic_heat) %>% ungroup()
+    chronic_heat = mean(heat_z, na.rm = TRUE), # zip's chronic mean heat 
+    # how unusually hot/cold that day was for that ZIP compared to its long-term
+    acute_heat = heat_z - chronic_heat) %>% ungroup() 
 
 acute_heat_group <- inla.group(daily_ed$acute_heat, n = 50)
 acute_heat_group <- match(acute_heat_group, unique(acute_heat_group))
@@ -71,12 +71,12 @@ daily_ed <- daily_ed %>%
   select(-`...1`, -D1Dx1, -D3Dx1, -D4Dx1, -Percentile.95,
          -heat_day, -D2_suppressed, -n_days, -Max_HI_Value,
          -n_suppressed_days, -daily_sum_raw, -D2Dx1)
-#daily_ed <- daily_ed %>% select(-heat_z)
+daily_ed <- daily_ed %>% select(-heat_z)
 
 head(daily_ed)
 gc()
 
-# ------ POISSON (only with heat) ----------------------------------------------------------
+# ------ POISSON ----------------------------------------------------------
 
 capture.output({
   cat("====================================================================\n")
@@ -105,18 +105,18 @@ capture.output({
   print(poisson_inla$waic$waic)
   cat("\n====================================================================\n")
   cat("\nRANDOM EFFECT STRUCTURE:\n")
-  print(names(nb_inla$summary.random))
+  print(names(poisson_inla$summary.random))
   
   cat("\nSHARED ACUTE HEAT RW2 SUMMARY:\n")
-  print(head(nb_inla$summary.random$acute_heat_group))
+  print(head(poisson_inla$summary.random$acute_heat_group))
   
   poisson_p_table <- as.data.frame(poisson_inla$summary.fixed)
   poisson_p_table$term <- rownames(poisson_p_table)
   
   saveRDS(poisson_p_table, paste0("create_cluster outputs/", folder_name, "/",
-                                  area, "_suppressed_INLA_poisson_coef_table.rds"))  
+                                  folder_name, "_suppressed_INLA_poisson_coef_table.rds"))  
 }, file = paste0("create_cluster outputs/", folder_name, "/",
-                 area, "_suppressed_ED_INLA_poisson_summary.txt"))
+                 folder_name, "_suppressed_ED_INLA_poisson_summary.txt"))
 rm(poisson_inla)
 gc()
 
@@ -124,15 +124,17 @@ gc()
 
 capture.output({
   cat("====================================================================\n")
-  cat("NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA (SES COVARIATES)\n")
+  cat("NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA\n")
   cat("INLA version:\n")
   print(packageVersion("INLA"))
   cat("\nR version:\n")
   print(R.version.string)
-  cat("\n====================================================================\n\n")
+  cat("\nReference cluster (lowest vulnerability):", reference_cluster, "\n")
+  cat("====================================================================\n\n")
   
   nb_inla <- inla(
-    D2 ~ cluster + month + day_of_week +
+    D2 ~ cluster + chronic_heat + month + day_of_week +
+      f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE) +
       f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
     family = "nbinomial", data = daily_ed, E = Population,
     control.compute = list(dic = TRUE, waic = TRUE),
@@ -160,15 +162,18 @@ capture.output({
   nb_p_table$term <- rownames(nb_p_table)
   
   cat("\n====================================================================\n")
+  cat("\nRANDOM EFFECT STRUCTURE:\n")
   print(names(nb_inla$summary.random))
+  cat("\nSHARED ACUTE HEAT RW2 SUMMARY:\n")
+  print(head(nb_inla$summary.random$acute_heat_group))
+  
+  cat("\n====================================================================\n")
   
   saveRDS(nb_p_table, paste0("create_cluster outputs/", folder_name, "/",
-                             area, "_suppressed_INLA_nb_coef_table.rds"))
+                             file_name, "_suppressed_INLA_nb_coef_table.rds"))
 }, file = paste0("create_cluster outputs/", folder_name, "/",
-                 area, "_suppressed_ED_INLA_nb_summary.txt"))
+                 file_name, "_suppressed_ED_INLA_nb_summary.txt"))
 
-saveRDS(nb_inla, paste0("create_cluster outputs/", folder_name, "/",
-                        area, "_suppressed_INLA_nb_model.rds"))
 rm(nb_inla, expected_counts)
 gc()
 
@@ -177,7 +182,7 @@ gc()
 # ===========================================================================
 
 nb_p_table <- readRDS(paste0("create_cluster outputs/", folder_name, "/",
-                             area, "_suppressed_INLA_nb_coef_table.rds")) %>%
+                             file_name, "_suppressed_INLA_nb_coef_table.rds")) %>%
   mutate(p_IRR_gt_1 = 1 - pnorm(0, mean = mean, sd = sd))
 
 coef_table <- nb_p_table %>%
@@ -219,19 +224,5 @@ final_table <- coef_table %>% filter(predictor == "cluster") %>%
               mutate(cluster = as.integer(as.character(cluster))),
             by = "cluster") %>% arrange(desc(IRR)) %>% select(-level)
 
-# ---------------------------------------------------------------
-
-composite_test <- cor.test(final_table$vulnerability_score,
-                           final_table$IRR, method = "spearman")
-
-irr_corrs <- lapply(vars, function(v) {
-  test <- suppressWarnings(cor.test(final_table[[v]], final_table$IRR,
-             method = "spearman"))
-  data.frame(variable = v, rho = unname(test$estimate))
-}) %>% bind_rows() %>% arrange(desc(abs(rho)))
-
 write.csv(final_table, paste0("create_cluster outputs/", folder_name, "/",
-                 area, "_cluster_results.csv"), row.names = FALSE)
-
-write.csv(irr_corrs, paste0("create_cluster outputs/", folder_name, "/",
-                 area, "_IRR_correlation.csv"), row.names = FALSE)
+                 file_name, "_cluster_results.csv"), row.names = FALSE)
