@@ -5,7 +5,7 @@ library(dplyr)
 library(tidyr)
 
 file_name <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none_HEAT"
+folder_name <- "Los_Angeles_discrete_none_HEAT_by_cluster"
 
 clustered_zctas <- readRDS(paste0(
   "create_cluster outputs/", folder_name, "/", file_name, "_ACS_zcta_clustered_for_ED.rds"))
@@ -55,9 +55,9 @@ daily_ed <- daily_ed %>%
     # how unusually hot/cold that day was for that ZIP compared to its long-term
     acute_heat = heat_z - chronic_heat) %>% ungroup() 
 
-acute_heat_group <- inla.group(daily_ed$acute_heat, n = 50)
-acute_heat_group <- match(acute_heat_group, unique(acute_heat_group))
-daily_ed$acute_heat_group <- acute_heat_group
+#acute_heat_group <- inla.group(daily_ed$acute_heat, n = 50)
+#acute_heat_group <- match(acute_heat_group, unique(acute_heat_group))
+#daily_ed$acute_heat_group <- acute_heat_group
 
 # -----------------------------------------------------------------------------
 
@@ -69,14 +69,13 @@ daily_ed <- daily_ed %>%
 
 daily_ed <- daily_ed %>%
   select(-`...1`, -D1Dx1, -D3Dx1, -D4Dx1, -Percentile.95,
-         -heat_day, -D2_suppressed, -n_days, -Max_HI_Value,
+         -heat_day, -D2_suppressed, -n_days,
          -n_suppressed_days, -daily_sum_raw, -D2Dx1)
-daily_ed <- daily_ed %>% select(-heat_z)
 
 head(daily_ed)
 gc()
 
-# ------ POISSON (only with heat) ----------------------------------------------------------
+# ------ POISSON ----------------------------------------------------------
 
 capture.output({
   cat("====================================================================\n")
@@ -89,13 +88,13 @@ capture.output({
   cat("====================================================================\n\n")
   
   poisson_inla <- inla(
-    D2 ~ cluster + chronic_heat + month + day_of_week + 
-      f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE) +
+    D2 ~ cluster + chronic_heat + acute_heat:cluster + month + day_of_week +
       f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
     family = "poisson", data = daily_ed, E = Population,
-    
-    control.compute = list(dic = TRUE, waic = TRUE),
+    control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
     control.predictor = list(compute = TRUE))
+
+    # f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE)
   
   print(summary(poisson_inla))
   cat("\n\n====================================================================\n")
@@ -111,6 +110,8 @@ capture.output({
                                   folder_name, "_suppressed_INLA_poisson_coef_table.rds"))  
 }, file = paste0("create_cluster outputs/", folder_name, "/",
                  folder_name, "_suppressed_ED_INLA_poisson_summary.txt"))
+saveRDS(poisson_inla, paste0("create_cluster outputs/", folder_name, "/",
+                             folder_name, "_suppressed_INLA_poisson_model.rds"))
 rm(poisson_inla)
 gc()
 
@@ -127,11 +128,10 @@ capture.output({
   cat("====================================================================\n\n")
   
   nb_inla <- inla(
-    D2 ~ cluster + chronic_heat + month + day_of_week +
-      f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE) +
+    D2 ~ cluster + chronic_heat + acute_heat:cluster + month + day_of_week +
       f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
     family = "nbinomial", data = daily_ed, E = Population,
-    control.compute = list(dic = TRUE, waic = TRUE),
+    control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
     control.predictor = list(compute = TRUE))
   
   print(summary(nb_inla))
@@ -159,7 +159,8 @@ capture.output({
                              file_name, "_suppressed_INLA_nb_coef_table.rds"))
 }, file = paste0("create_cluster outputs/", folder_name, "/",
                  file_name, "_suppressed_ED_INLA_nb_summary.txt"))
-
+saveRDS(nb_inla, paste0("create_cluster outputs/", folder_name, "/",
+                             folder_name, "_suppressed_INLA_nb_model.rds"))
 rm(nb_inla, expected_counts)
 gc()
 
@@ -212,3 +213,76 @@ final_table <- coef_table %>% filter(predictor == "cluster") %>%
 
 write.csv(final_table, paste0("create_cluster outputs/", folder_name, "/",
                  file_name, "_cluster_results.csv"), row.names = FALSE)
+
+# ===========================================================================
+# CHS-STYLE CLUSTER THRESHOLDS USING CLUSTER-SPECIFIC LINEAR HEAT EFFECTS
+# ===========================================================================
+
+inla <- readRDS(paste0("create_cluster outputs/", folder_name, "/",
+                       folder_name, "_suppressed_INLA_poisson_model.rds"))
+
+# ----- model coefficients: cluster-specific intercepts and slopes ---------
+
+p_table <- as.data.frame(inla$summary.fixed)
+p_table$term <- rownames(p_table)
+
+reference_cluster <- "cluster6"
+alpha_ref <- p_table %>% filter(term == "(Intercept)") %>% pull(mean)
+
+cluster_intercepts <- tibble(cluster = paste0(
+  "cluster",sort(unique(daily_ed$cluster))), alpha = alpha_ref) %>%
+  left_join(p_table %>% filter(grepl("^cluster", term)) %>%
+              transmute(cluster = term, cluster_effect = mean), by = "cluster") %>%
+  mutate(alpha = ifelse(cluster == reference_cluster, alpha,
+                        alpha + coalesce(cluster_effect, 0))) %>%
+  select(cluster, alpha)
+
+heat_slopes <- p_table %>%
+  filter(grepl("^cluster.*:acute_heat$", term)) %>%
+  transmute(cluster = sub(":acute_heat$", "", term), beta = mean)
+
+cluster_model_results <- cluster_intercepts %>%
+  left_join(heat_slopes, by = "cluster") %>%
+  arrange(as.numeric(sub("cluster", "", cluster)))
+
+# ----- cluster-specific chronic heat --------------------------------------
+
+cluster_heat <- daily_ed %>%
+  mutate(cluster_name = paste0("cluster", as.character(cluster))) %>%
+  group_by(cluster_name) %>%
+  summarise(H_bar = mean(chronic_heat, na.rm = TRUE), .groups = "drop")
+
+threshold_data <- heat_slopes %>%
+  left_join(cluster_heat, by = c("cluster" = "cluster_name"))
+
+# ----- daily counterfactual rate and attributable risk --------------------
+
+daily_thresholds <- daily_ed %>%
+  mutate(cluster_name = paste0("cluster", as.character(cluster)),
+         beta = threshold_data$beta[match(cluster_name, threshold_data$cluster)],
+         H_bar = threshold_data$H_bar[match(cluster_name, threshold_data$cluster)],
+         lp_obs = inla$summary.linear.predictor$mean,
+         acute_heat = heat_z - H_bar,
+         lp_cf = lp_obs - beta * acute_heat,
+         rate_obs = exp(lp_obs),
+         rate_cf = exp(lp_cf),
+         AR = pmax((rate_obs - rate_cf) * 10000, 0)) # excess rate per 10,000 population
+
+# ----- cluster-specific intercepts, slopes, and P(AR > 0) -------------------
+
+cluster_slopes <- p_table %>%
+  filter(grepl("^cluster.*:acute_heat$", term)) %>%
+  transmute(cluster = sub(":acute_heat$", "", term), beta = mean)
+
+cluster_exceedance <- daily_thresholds %>%
+  group_by(cluster_name) %>%
+  summarise(P_AR_gt_0 = mean(AR > 0, na.rm = TRUE), .groups = "drop") %>%
+  rename(cluster = cluster_name)
+
+cluster_results <- cluster_intercepts %>%
+  left_join(cluster_slopes, by = "cluster") %>%
+  left_join(cluster_exceedance, by = "cluster") %>%
+  arrange(as.numeric(sub("cluster", "", cluster)))
+
+print(cluster_results)
+gc()
