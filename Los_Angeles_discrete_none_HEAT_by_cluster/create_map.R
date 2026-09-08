@@ -50,11 +50,13 @@ map <- ggplot() +
   geom_sf(data = boundary, fill = "grey90", color = "white", linewidth = 0.1) +
   geom_sf(data = zcta_cropped, aes(fill = P_AR_gt_0), color = NA) +
   geom_sf(data = cluster_shapes, fill = NA, color = "black", linewidth = 0.25) +
-  coord_sf(expand = FALSE) + scale_fill_gradient(
-    low = "#E8F5E9", high = "#006D2C", limits = c(0.49, 0.79),
+  coord_sf(expand = FALSE) + 
+  scale_fill_gradientn(
+    colors = c("#D9FFD9", "#5CDB5C", "#16A34A", "#006B2C", "#002E14"),
+    limits = c(0.49, 0.79),
     breaks = c(0.50, 0.60, 0.70, 0.78),
     labels = percent_format(accuracy = 1), name = "P(AR > 0)") + labs(
-    title = paste("Heat Exceedance Probabilities Across", file_name, "SES Clusters"),) +
+      title = paste("Proportion of Positive AR Across", file_name, "SES Clusters"),) +
   theme_minimal() + theme(aspect.ratio = 1.6,
     legend.position = "right",
     legend.key.height = unit(1.5, "cm"),
