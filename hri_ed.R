@@ -5,7 +5,7 @@ library(dplyr)
 library(tidyr)
 
 file_name <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none_HEAT_by_cluster"
+folder_name <- "Los_Angeles_discrete_none_HEAT"
 
 clustered_zctas <- readRDS(paste0(
   "create_cluster outputs/", folder_name, "/", file_name, "_ACS_zcta_clustered_for_ED.rds"))
@@ -168,11 +168,11 @@ gc()
 # extract INLA coefficients and calculate IRRs
 # ===========================================================================
 
-nb_p_table <- readRDS(paste0("create_cluster outputs/", folder_name, "/",
-                             file_name, "_suppressed_INLA_nb_coef_table.rds")) %>%
+p_table <- readRDS(paste0("create_cluster outputs/", folder_name, "/",
+                             folder_name, "_suppressed_INLA_poisson_coef_table.rds")) %>%
   mutate(p_IRR_gt_1 = 1 - pnorm(0, mean = mean, sd = sd))
 
-coef_table <- nb_p_table %>%
+coef_table <- p_table %>%
   rename(estimate = mean, std.error = sd, ci_low_log = `0.025quant`,
          ci_high_log = `0.975quant`) %>%
   filter(term != "(Intercept)") %>% mutate(IRR = exp(estimate),
@@ -200,7 +200,7 @@ coef_table <- bind_rows(reference_row, coef_table) %>%
   arrange(predictor, level_numeric) %>% select(-level_numeric)
 
 final_table <- coef_table %>% filter(predictor == "cluster") %>%
-  mutate(cluster = as.integer(level)) %>% left_join(nb_p_table %>%
+  mutate(cluster = as.integer(level)) %>% left_join(p_table %>%
       filter(grepl("^cluster", term)) %>%
       mutate(cluster = as.integer(gsub("[^0-9]", "", term))) %>%
       select(cluster, p_IRR_gt_1), by = "cluster") %>%
@@ -212,14 +212,14 @@ final_table <- coef_table %>% filter(predictor == "cluster") %>%
             by = "cluster") %>% arrange(desc(IRR)) %>% select(-level)
 
 write.csv(final_table, paste0("create_cluster outputs/", folder_name, "/",
-                 file_name, "_cluster_results.csv"), row.names = FALSE)
+                 file_name, "_poisson_cluster_results.csv"), row.names = FALSE)
 
 # ===========================================================================
 # CHS-STYLE CLUSTER THRESHOLDS USING CLUSTER-SPECIFIC LINEAR HEAT EFFECTS
 # ===========================================================================
 
 inla <- readRDS(paste0("create_cluster outputs/", folder_name, "/",
-                       folder_name, "_suppressed_INLA_poisson_model.rds"))
+                       folder_name, "_suppressed_INLA_nb_model.rds"))
 
 # ----- model coefficients: cluster-specific intercepts and slopes ---------
 
@@ -274,14 +274,14 @@ cluster_slopes <- p_table %>%
   filter(grepl("^cluster.*:acute_heat$", term)) %>%
   transmute(cluster = sub(":acute_heat$", "", term), beta = mean)
 
-cluster_exceedance <- daily_thresholds %>%
+cluster_positive_AR <- daily_thresholds %>%
   group_by(cluster_name) %>%
   summarise(P_AR_gt_0 = mean(AR > 0, na.rm = TRUE), .groups = "drop") %>%
   rename(cluster = cluster_name)
 
 cluster_results <- cluster_intercepts %>%
   left_join(cluster_slopes, by = "cluster") %>%
-  left_join(cluster_exceedance, by = "cluster") %>%
+  left_join(cluster_positive_AR, by = "cluster") %>%
   arrange(as.numeric(sub("cluster", "", cluster)))
 
 print(cluster_results)
