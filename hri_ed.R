@@ -5,7 +5,7 @@ library(dplyr)
 library(tidyr)
 
 file_name <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none_HEAT"
+folder_name <- "Los_Angeles_discrete_none_HEAT_by_cluster"
 
 clustered_zctas <- readRDS(paste0(
   "create_cluster outputs/", folder_name, "/", file_name, "_ACS_zcta_clustered_for_ED.rds"))
@@ -88,13 +88,13 @@ capture.output({
   cat("====================================================================\n\n")
   
   poisson_inla <- inla(
-    D2 ~ cluster + chronic_heat + acute_heat:cluster + month + day_of_week +
+    D2 ~ cluster + chronic_heat + acute_heat + acute_heat:cluster + month + day_of_week +
       f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
     family = "poisson", data = daily_ed, E = Population,
     control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
     control.predictor = list(compute = TRUE))
-
-    # f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE)
+  
+  # f(acute_heat_group, model = "rw2", scale.model = TRUE, constr = TRUE)
   
   print(summary(poisson_inla))
   cat("\n\n====================================================================\n")
@@ -102,6 +102,16 @@ capture.output({
   print(poisson_inla$dic$dic)
   cat("\nWAIC:\n")
   print(poisson_inla$waic$waic)
+  
+  cat("\n====================================================================\n")
+  
+  cat("\nZERO-INFLATION DIAGNOSTIC (observed vs. Poisson-predicted)\n")
+  observed_zero_prop <- mean(daily_ed$D2 == 0)
+  expected_counts <- poisson_inla$summary.fitted.values$mean * daily_ed$Population
+  predicted_zero_prop <- mean(dpois(0, lambda = expected_counts))
+  cat("Observed zero proportion:", observed_zero_prop, "\n")
+  cat("Poisson-predicted zero proportion:", predicted_zero_prop, "\n")
+  cat("Excess zeros (observed - predicted):", observed_zero_prop - predicted_zero_prop, "\n")
   
   poisson_p_table <- as.data.frame(poisson_inla$summary.fixed)
   poisson_p_table$term <- rownames(poisson_p_table)
@@ -115,52 +125,53 @@ saveRDS(poisson_inla, paste0("create_cluster outputs/", folder_name, "/",
 rm(poisson_inla)
 gc()
 
+
 # ------- NEGATIVE BINOMIAL ---------------------------------------------------
 
 capture.output({
-  cat("====================================================================\n")
-  cat("NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA\n")
-  cat("INLA version:\n")
-  print(packageVersion("INLA"))
-  cat("\nR version:\n")
-  print(R.version.string)
-  cat("\nReference cluster (lowest vulnerability):", reference_cluster, "\n")
-  cat("====================================================================\n\n")
-  
-  nb_inla <- inla(
-    D2 ~ cluster + chronic_heat + acute_heat:cluster + month + day_of_week +
-      f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
-    family = "nbinomial", data = daily_ed, E = Population,
-    control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
-    control.predictor = list(compute = TRUE))
-  
-  print(summary(nb_inla))
-  cat("\n====================================================================\n")
-  cat("\nDIC:\n")
-  print(nb_inla$dic$dic)
-  cat("\nWAIC:\n")
-  print(nb_inla$waic$waic)
-  cat("\n====================================================================\n")
-  
-  cat("\nZERO-INFLATION DIAGNOSTIC (observed vs. NB-predicted)\n")
-  observed_zero_prop <- mean(daily_ed$D2 == 0)
-  expected_counts <- nb_inla$summary.fitted.values$mean * daily_ed$Population
-  size_est <- nb_inla$summary.hyperpar[
-    grep("size", rownames(nb_inla$summary.hyperpar), ignore.case = TRUE), "mean"][1]
-  predicted_zero_prop <- mean(dnbinom(0, mu = expected_counts, size = size_est))
-  cat("Observed zero proportion:", observed_zero_prop, "\n")
-  cat("NB-predicted zero proportion:", predicted_zero_prop, "\n")
-  cat("Excess zeros (observed - predicted):", observed_zero_prop - predicted_zero_prop, "\n")
-  
-  nb_p_table <- as.data.frame(nb_inla$summary.fixed)
-  nb_p_table$term <- rownames(nb_p_table)
-  
-  saveRDS(nb_p_table, paste0("create_cluster outputs/", folder_name, "/",
-                             file_name, "_suppressed_INLA_nb_coef_table.rds"))
-}, file = paste0("create_cluster outputs/", folder_name, "/",
-                 file_name, "_suppressed_ED_INLA_nb_summary.txt"))
+    cat("====================================================================\n")
+    cat("NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA\n")
+    cat("INLA version:\n")
+    print(packageVersion("INLA"))
+    cat("\nR version:\n")
+    print(R.version.string)
+    cat("\nReference cluster (lowest vulnerability):", reference_cluster, "\n")
+    cat("====================================================================\n\n")
+    
+    nb_inla <- inla(
+      D2 ~ cluster + chronic_heat + acute_heat + acute_heat:cluster + month + day_of_week +
+        f(doy, model = "rw2", scale.model = TRUE, constr = TRUE),
+      family = "nbinomial", data = daily_ed, E = Population,
+      control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
+      control.predictor = list(compute = TRUE))
+    
+    print(summary(nb_inla))
+    cat("\n====================================================================\n")
+    cat("\nDIC:\n")
+    print(nb_inla$dic$dic)
+    cat("\nWAIC:\n")
+    print(nb_inla$waic$waic)
+    cat("\n====================================================================\n")
+    
+    cat("\nZERO-INFLATION DIAGNOSTIC (observed vs. NB-predicted)\n")
+    observed_zero_prop <- mean(daily_ed$D2 == 0)
+    expected_counts <- nb_inla$summary.fitted.values$mean * daily_ed$Population
+    size_est <- nb_inla$summary.hyperpar[
+      grep("size", rownames(nb_inla$summary.hyperpar), ignore.case = TRUE), "mean"][1]
+    predicted_zero_prop <- mean(dnbinom(0, mu = expected_counts, size = size_est))
+    cat("Observed zero proportion:", observed_zero_prop, "\n")
+    cat("NB-predicted zero proportion:", predicted_zero_prop, "\n")
+    cat("Excess zeros (observed - predicted):", observed_zero_prop - predicted_zero_prop, "\n")
+    
+    nb_p_table <- as.data.frame(nb_inla$summary.fixed)
+    nb_p_table$term <- rownames(nb_p_table)
+    
+    saveRDS(nb_p_table, paste0("create_cluster outputs/", folder_name, "/",
+                               file_name, "_suppressed_INLA_nb_coef_table.rds"))
+  }, file = paste0("create_cluster outputs/", folder_name, "/",
+                   file_name, "_suppressed_ED_INLA_nb_summary.txt"))
 saveRDS(nb_inla, paste0("create_cluster outputs/", folder_name, "/",
-                             folder_name, "_suppressed_INLA_nb_model.rds"))
+                        folder_name, "_suppressed_INLA_nb_model.rds"))
 rm(nb_inla, expected_counts)
 gc()
 
@@ -219,7 +230,7 @@ write.csv(final_table, paste0("create_cluster outputs/", folder_name, "/",
 # ===========================================================================
 
 inla <- readRDS(paste0("create_cluster outputs/", folder_name, "/",
-                       folder_name, "_suppressed_INLA_nb_model.rds"))
+                       folder_name, "_suppressed_INLA_poisson_model.rds"))
 
 # ----- model coefficients: cluster-specific intercepts and slopes ---------
 
@@ -237,15 +248,23 @@ cluster_intercepts <- tibble(cluster = paste0(
                         alpha + coalesce(cluster_effect, 0))) %>%
   select(cluster, alpha)
 
+# ----------------------------------------------------------------------
+
+beta_shared <- p_table %>% filter(term == "acute_heat") %>% pull(mean)
+
 heat_slopes <- p_table %>%
   filter(grepl("^cluster.*:acute_heat$", term)) %>%
-  transmute(cluster = sub(":acute_heat$", "", term), beta = mean)
+  transmute(cluster = sub(":acute_heat$", "", term), beta_deviation = mean) %>%
+  mutate(beta = beta_shared + beta_deviation)
+
+heat_slopes <- bind_rows(heat_slopes,
+  tibble(cluster = reference_cluster, beta_deviation = 0, beta = beta_shared))
+
+# ----- cluster-specific chronic heat --------------------------------------
 
 cluster_model_results <- cluster_intercepts %>%
   left_join(heat_slopes, by = "cluster") %>%
   arrange(as.numeric(sub("cluster", "", cluster)))
-
-# ----- cluster-specific chronic heat --------------------------------------
 
 cluster_heat <- daily_ed %>%
   mutate(cluster_name = paste0("cluster", as.character(cluster))) %>%
@@ -270,9 +289,7 @@ daily_thresholds <- daily_ed %>%
 
 # ----- cluster-specific intercepts, slopes, and P(AR > 0) -------------------
 
-cluster_slopes <- p_table %>%
-  filter(grepl("^cluster.*:acute_heat$", term)) %>%
-  transmute(cluster = sub(":acute_heat$", "", term), beta = mean)
+cluster_slopes <- heat_slopes %>% select(cluster, beta)
 
 cluster_positive_AR <- daily_thresholds %>%
   group_by(cluster_name) %>%
