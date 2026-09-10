@@ -1,0 +1,8 @@
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*_INLA_*_model.rds
+!overview.pdf
+!ses_clusters-main/Los_Angeles_discrete_none_HEAT_by_cluster/cluster_profiles_heatmap.pdf
