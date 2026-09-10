@@ -1,0 +1,128 @@
+====================================================================
+POISSON INLA - SUPPRESSED 2018 ED DATA
+INLA version:
+[1] ‘23.4.11.1’
+
+R version:
+[1] "R version 4.2.3 (2023-03-15)"
+
+Reference cluster (lowest vulnerability): 6 
+====================================================================
+
+
+Call:
+   c("inla.core(formula = formula, family = family, contrasts = contrasts, 
+   ", " data = data, quantiles = quantiles, E = E, offset = offset, ", " 
+   scale = scale, weights = weights, Ntrials = Ntrials, strata = strata, 
+   ", " lp.scale = lp.scale, link.covariates = link.covariates, verbose = 
+   verbose, ", " lincomb = lincomb, selection = selection, control.compute 
+   = control.compute, ", " control.predictor = control.predictor, 
+   control.family = control.family, ", " control.inla = control.inla, 
+   control.fixed = control.fixed, ", " control.mode = control.mode, 
+   control.expert = control.expert, ", " control.hazard = control.hazard, 
+   control.lincomb = control.lincomb, ", " control.update = 
+   control.update, control.lp.scale = control.lp.scale, ", " 
+   control.pardiso = control.pardiso, only.hyperparam = only.hyperparam, 
+   ", " inla.call = inla.call, inla.arg = inla.arg, num.threads = 
+   num.threads, ", " blas.num.threads = blas.num.threads, keep = keep, 
+   working.directory = working.directory, ", " silent = silent, inla.mode 
+   = inla.mode, safe = FALSE, debug = debug, ", " .parent.frame = 
+   .parent.frame)") 
+Time used:
+    Pre = 3.22, Running = 2.37, Post = 0.392, Total = 5.98 
+Fixed effects:
+                        mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)          -11.482 0.252    -12.007  -11.473    -11.012 -11.457   0
+cluster1              -0.518 0.030     -0.576   -0.518     -0.460  -0.518   0
+cluster10             -0.479 0.055     -0.586   -0.479     -0.372  -0.479   0
+cluster11             -0.246 0.034     -0.313   -0.246     -0.179  -0.246   0
+cluster12             -0.265 0.050     -0.363   -0.265     -0.168  -0.265   0
+cluster13             -0.552 0.037     -0.626   -0.552     -0.478  -0.552   0
+cluster14             -0.368 0.039     -0.444   -0.368     -0.292  -0.368   0
+cluster2              -0.206 0.045     -0.295   -0.206     -0.118  -0.206   0
+cluster3              -0.441 0.033     -0.505   -0.441     -0.377  -0.441   0
+cluster4              -0.292 0.041     -0.373   -0.292     -0.212  -0.292   0
+cluster5               0.750 0.095      0.564    0.750      0.936   0.750   0
+cluster7              -0.543 0.111     -0.760   -0.543     -0.326  -0.543   0
+cluster8              -0.090 0.049     -0.186   -0.090      0.005  -0.090   0
+cluster9              -0.205 0.033     -0.271   -0.205     -0.140  -0.205   0
+chronic_heat           0.027 0.038     -0.047    0.027      0.102   0.027   0
+acute_heat             0.388 0.060      0.269    0.389      0.506   0.389   0
+month6                -0.292 0.191     -0.675   -0.290      0.080  -0.286   0
+month7                -0.218 0.298     -0.766   -0.233      0.413  -0.259   0
+month8                 0.168 0.359     -0.489    0.150      0.930   0.117   0
+month9                 0.261 0.388     -0.483    0.253      1.051   0.239   0
+month10                0.240 0.436     -0.581    0.226      1.142   0.202   0
+day_of_weekMon         0.081 0.035      0.013    0.081      0.149   0.080   0
+day_of_weekTue         0.084 0.040      0.006    0.083      0.164   0.083   0
+day_of_weekWed         0.073 0.043     -0.011    0.073      0.161   0.072   0
+day_of_weekThu         0.083 0.043     -0.002    0.083      0.171   0.082   0
+day_of_weekFri         0.069 0.040     -0.009    0.069      0.150   0.068   0
+day_of_weekSat         0.034 0.035     -0.034    0.034      0.103   0.033   0
+cluster1:acute_heat    0.047 0.061     -0.074    0.047      0.167   0.047   0
+cluster10:acute_heat  -0.084 0.109     -0.297   -0.084      0.129  -0.084   0
+cluster11:acute_heat  -0.025 0.068     -0.157   -0.025      0.108  -0.025   0
+cluster12:acute_heat  -0.054 0.111     -0.271   -0.054      0.164  -0.054   0
+cluster13:acute_heat   0.085 0.074     -0.060    0.085      0.229   0.085   0
+cluster14:acute_heat   0.059 0.075     -0.087    0.059      0.206   0.059   0
+cluster2:acute_heat   -0.067 0.089     -0.240   -0.067      0.107  -0.067   0
+cluster3:acute_heat    0.056 0.065     -0.072    0.056      0.184   0.056   0
+cluster4:acute_heat    0.014 0.077     -0.137    0.014      0.165   0.014   0
+cluster5:acute_heat    0.072 0.102     -0.127    0.072      0.272   0.072   0
+cluster7:acute_heat   -0.155 0.116     -0.381   -0.155      0.072  -0.155   0
+cluster8:acute_heat    0.208 0.093      0.026    0.208      0.390   0.208   0
+cluster9:acute_heat   -0.086 0.066     -0.216   -0.086      0.044  -0.086   0
+
+Linear combinations (derived):
+          ID  mean    sd 0.025quant 0.5quant 0.975quant  mode kld
+cluster6   1 0.388 0.060      0.269    0.388      0.506 0.389   0
+cluster1   2 0.435 0.057      0.322    0.435      0.544 0.437   0
+cluster10  3 0.304 0.105      0.098    0.304      0.510 0.305   0
+cluster11  4 0.363 0.061      0.243    0.364      0.482 0.364   0
+cluster12  5 0.334 0.109      0.121    0.334      0.547 0.335   0
+cluster13  6 0.473 0.068      0.338    0.473      0.606 0.474   0
+cluster14  7 0.447 0.068      0.314    0.448      0.579 0.448   0
+cluster2   8 0.321 0.084      0.157    0.322      0.485 0.322   0
+cluster3   9 0.444 0.059      0.327    0.445      0.560 0.446   0
+cluster4  10 0.402 0.068      0.268    0.403      0.536 0.403   0
+cluster5  11 0.460 0.087      0.290    0.460      0.630 0.460   0
+cluster7  12 0.233 0.102      0.034    0.233      0.433 0.233   0
+cluster8  13 0.596 0.087      0.426    0.596      0.765 0.597   0
+cluster9  14 0.302 0.059      0.186    0.302      0.416 0.303   0
+
+Random effects:
+  Name	  Model
+    doy RW2 model
+
+Model hyperparameters:
+                   mean    sd 0.025quant 0.5quant 0.975quant  mode
+Precision for doy 0.015 0.014      0.002     0.01      0.053 0.002
+
+Deviance Information Criterion (DIC) ...............: 93194.48
+Deviance Information Criterion (DIC, saturated) ....: 74857.61
+Effective number of parameters .....................: 107.19
+
+Watanabe-Akaike information criterion (WAIC) ...: 93408.42
+Effective number of parameters .................: 451.65
+
+Marginal log-Likelihood:  -47761.27 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+
+====================================================================
+
+DIC:
+[1] 93194.48
+
+WAIC:
+[1] 93408.42
+
+====================================================================
+
+ZERO-INFLATION DIAGNOSTIC (observed vs. Poisson-predicted)
+Observed zero proportion: 0.8765478 
+Poisson-predicted zero proportion: 0.7587503 
+Excess zeros (observed - predicted): 0.1177975 
