@@ -1,6 +1,5 @@
 library(tidycensus)
 library(tidyverse)
-
 library(dplyr)
 library(cluster)
 library(factoextra)
@@ -348,12 +347,6 @@ cluster_assignment <- pr_data %>% select(GEOID, cluster, cluster_label)
 clustered_zctas <- acs_clean %>% st_drop_geometry() %>%
   left_join(cluster_assignment, by = "GEOID") %>%
   dplyr::select(GEOID, cluster, cluster_label, everything())
-
-clustered_zctas <- clustered_zctas %>% left_join(
-  cluster_profiles %>% select(cluster, all_of(vars)) %>% 
-    rename_with(~paste0(.x, "_cluster_median"), all_of(vars)), by = "cluster") %>%
-  mutate(across(all_of(vars), ~ if_else(is.na(.x), get(paste0(cur_column(), "_cluster_median")), .x))) %>%
-  select(-ends_with("_cluster_median"))
 
 saveRDS(clustered_zctas, file = file.path(
   "create_cluster outputs", folder_name, paste0(file_name, "_ACS_zcta_clustered_for_ED.rds")))
