@@ -86,15 +86,16 @@ SD for every cluster, holding chronic heat fixed.
 | `cluster_ar.R` | Posterior excess-rate calculations used by `hri_ed_analysis.R` |
 | `create_cluster.R` | Upstream ACS profile clustering |
 | `suppressed_data.R` | Upstream reconstruction of suppressed daily ED counts |
-| `create_cluster outputs/` | Retained `Los_Angeles_discrete_none` and `Los_Angeles_discrete_none_MIN` results |
+| `create_cluster outputs/` | Current `Los_Angeles_discrete_none_MIN` results on GitHub; older `none` results kept locally |
 | `datasets/` | Raw data used by upstream preprocessing |
 | `maps/` | Retained cluster maps for the `none` and `none_MIN` configurations |
 | `CA_simulated_ed/` | Separate simulation workflow; retained with its own README |
 | `documents/` | Reference documents |
-| `acute_heat_supplement.tex` | Supplementary acute-heat math, methods, calculation code, and Poisson maps |
-| `acute_heat_supplement.pdf` | Previously compiled supplement; may lag behind source edits |
-| `methodology.tex` | Broader methods draft |
-| `archive/` | Earlier scripts and archived results |
+| `methods/acute_heat_supplement.tex` | Supplementary acute-heat math, methods, calculation code, and Poisson maps |
+| `methods/acute_heat_supplement.pdf` | Previously compiled supplement; may lag behind source edits |
+| `methods/methodology.tex` | Broader methods draft |
+| `analysis_updates/` | Earlier analysis reports and reproducible outputs retained on GitHub |
+| `archive/` | Earlier scripts and archived results, retained locally |
 
 The upstream clustering and suppression scripts currently select
 `Los_Angeles_discrete_none_MIN`; the current heat scripts read prepared inputs
@@ -103,7 +104,8 @@ end-to-end pipeline. Check the configuration and deliberately prepare the
 appropriate heat inputs before replacing them. Upstream clustering also uses
 ACS/Census services and additional R packages listed in that script.
 
-The supplement references both PNGs inside `acute_heat_poisson/`. Keep this
+Compile the supplement from `methods/`; it references both PNGs through
+`../Los_Angeles_discrete_none_HEAT_by_cluster/acute_heat_poisson/`. Keep this
 relative folder structure when compiling or sharing its source. The built-in
 single-file LaTeX preview has previously been unable to load these external
 images; a compiler with access to the project files is needed for the full PDF.
@@ -132,4 +134,9 @@ the current heat script alone was not treated as evidence that they were unused.
 ## GitHub contents
 
 Large fitted-model files, model caches, and raw PReMiuM run traces are kept locally and excluded from Git. A fresh clone refits models when needed. The obsolete top-level Los_Angeles_discrete_none_HEAT folder is excluded; the current heat workflow uses Los_Angeles_discrete_none_HEAT_by_cluster.
+
+The local `archive/` and older `create_cluster outputs/Los_Angeles_discrete_none/`
+results are also excluded from GitHub because current R configurations do not
+use them. `analysis_updates/` remains on GitHub. Root-level methods documents
+are collected under `methods/`; generated map PDFs remain beside their figures.
 
