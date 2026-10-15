@@ -1,14 +1,11 @@
 # Choose "poisson", "nbinomial", or "both"; then source this whole script.
 model_family <- "both"
-# ZCTA probability and IRR maps and RR forest plots, each as PNG and PDF.
-# Also saves CSV summaries and the two ggplot objects.
 # RR_k = exp(beta_acute,k) per one global heat SD, holding chronic heat fixed.
 # P(beta_acute,k > 0 | Y) = P(RR_k > 1 | Y).
 library(dplyr)
 library(ggplot2)
 library(INLA)
 
-# Locate inputs relative to this document, without changing the working directory.
 script_files <- as.character(unlist(lapply(sys.frames(), function(frame) frame$ofile)))
 script_files <- script_files[basename(script_files) == "acute_heat.R"]
 command_file <- grep("^--file=", commandArgs(), value = TRUE)
@@ -17,7 +14,7 @@ project_dir <- if (length(script_files)) {
 } else if (length(command_file) && sub("^--file=", "", command_file[1]) != "-") {
   dirname(normalizePath(sub("^--file=", "", command_file[1]), mustWork = TRUE))
 } else {
-  getwd() # Running selected lines: use the project's working directory.
+  getwd() 
 }
 
 # ---- Settings ---------------------------------------------------------------
@@ -91,7 +88,6 @@ map_data <- map_geometry$zctas %>%
   mutate(GEOID = as.character(ZCTA5CE20)) %>%
   left_join(clustered_zctas %>% select(GEOID, cluster), by = "GEOID") %>%
   left_join(acute_summary %>% select(cluster, P_beta_gt_0), by = "cluster")
-# Verify both joins against the saved ZCTA classifications used in the model.
 if (length(setdiff(clustered_zctas$GEOID, map_data$GEOID))) {
   stop("Some classified ZCTAs are absent from the county-intersection geometry.")
 }
@@ -109,8 +105,6 @@ zcta_probability_table <- clustered_zctas %>%
   left_join(geometry_coverage, by = "GEOID")
 write.csv(zcta_probability_table,
           file.path(output_dir, "acute_heat_zcta_probabilities.csv"), row.names = FALSE)
-# Boundary-only intersections are lines, with no county area to fill.
-# Retain all rows in map_data for identifier checks; draw area geometries only.
 map_polygons <- map_data[sf::st_dimension(map_data) == 2L, ]
 unmapped <- setdiff(cluster_ids, unique(map_polygons$cluster))
 if (length(unmapped)) stop("No map geometry for cluster(s): ", paste(unmapped, collapse = ", "))
@@ -137,7 +131,7 @@ print(probability_map)
 print(rr_plot)
 message("Finished. Figures and summary saved in: ", output_dir)
 }
-# Generate IRR maps from the summaries just refreshed above.
+# Generate IRR maps
 irr_environment <- new.env(parent = environment())
 irr_environment$irr_model_families <- model_families
 source(file.path(project_dir, "acute_heat_irr_maps.R"), local = irr_environment)

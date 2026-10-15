@@ -1,5 +1,4 @@
-# Map the saved acute-heat posterior median IRRs for both likelihoods.
-# When run directly, regenerate both models' IRR maps from saved summaries.
+# Map the saved acute-heat posterior median IRRs
 library(dplyr)
 library(ggplot2)
 library(sf)
@@ -36,7 +35,6 @@ read_irr_map_inputs <- function(model_dir) {
             all(estimates$RR_low <= estimates$RR_median),
             all(estimates$RR_median <= estimates$RR_high),
             setequal(estimates$cluster, assignments$cluster))
-  # Each model uses its own saved ZCTA classifications, not a newly estimated partition.
   polygons <- geometry$zctas %>%
     mutate(GEOID = as.character(ZCTA5CE20)) %>%
     left_join(select(assignments, GEOID, cluster), by = "GEOID") %>%
@@ -45,16 +43,12 @@ read_irr_map_inputs <- function(model_dir) {
             !anyNA(polygons$RR_median[!is.na(polygons$cluster)]))
   polygons <- polygons[sf::st_dimension(polygons) == 2L & !is.na(polygons$cluster), ]
   stopifnot(setequal(estimates$cluster, polygons$cluster))
-  # Increasing IRR makes the legend follow the gradient. Cluster IDs remain join keys only.
   estimates <- estimates %>% arrange(RR_median, as.numeric(cluster))
   list(estimates = estimates, polygons = polygons, boundary = geometry$boundary)
 }
 
 map_inputs <- lapply(model_dirs, function(folder) read_irr_map_inputs(file.path(input_dir, folder)))
 
-# Each model uses its own light-to-dark green scale.
-# The scale is anchored at the model-specific median so middle values
-# receive more contrast instead of remaining mostly pastel.
 green_palette <- c("#F7FCF5", "#E2F2DC", "#B9DFAE", "#67A96B", "#1E5A32")
 irr_scale <- function(limits, midpoint) {
   scale_fill_gradientn(
@@ -78,7 +72,6 @@ irr_maps <- lapply(names(map_inputs), function(model_name) {
   
   irr_mid <- median(estimates$RR_median)
   
-  # Map legend swatches through exactly the same continuous scale as the polygons.
   legend_scale <- irr_scale(irr_limits, irr_mid)
   legend_scale$train(estimates$RR_median)
   swatches <- setNames(legend_scale$map(estimates$RR_median), cluster_order)
@@ -96,7 +89,6 @@ irr_maps <- lapply(names(map_inputs), function(model_name) {
             colour = "white", linewidth = 0.10) +
     geom_sf(data = boundaries, fill = NA, colour = "black", linewidth = 0.30) +
     
-    # Invisible points inside the extent supply a profile legend only.
     geom_point(data = estimates, aes(colour = cluster),
                x = mean(bbox[c("xmin", "xmax")]), y = mean(bbox[c("ymin", "ymax")]),
                size = 0, alpha = 0, inherit.aes = FALSE, show.legend = TRUE) +

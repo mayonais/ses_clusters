@@ -88,7 +88,6 @@ load_heat_data <- function(input_dir, study_name = "Los Angeles") {
     readRDS(file.path(input_dir, paste0(study_name, "_daily_ed_no_heat.rds"))))
 }
 
-# Keep one definition of the predictor for both likelihoods and both scripts.
 heat_model_formula <- function() {
   D2 ~ cluster + chronic_heat + acute_heat + acute_heat:cluster + month +
     day_of_week + f(doy, model = "rw2", scale.model = TRUE, constr = TRUE)
@@ -113,8 +112,6 @@ make_heat_lincombs <- function(data) {
   }), paste0("cluster", cluster_ids))
 }
 
-# Hash the actual ordered model inputs rather than input filenames. The same
-# prepared data and model specification therefore reuse the same fit in either script.
 heat_object_md5 <- function(object) {
   path <- tempfile(fileext = ".rds")
   on.exit(unlink(path))
@@ -167,7 +164,6 @@ summarise_heat_slopes <- function(model, cluster_ids) {
     beta_q <- INLA::inla.qmarginal(c(0.025, 0.5, 0.975), marginal)
     data.frame(cluster = cluster_ids[j],
       beta_mean = INLA::inla.emarginal(identity, marginal),
-      # Retain INLA's stored mean as well, for the original HRI output convention.
       beta_inla_mean = model$summary.lincomb.derived[term, "mean"],
       beta_median = beta_q[2], beta_low = beta_q[1], beta_high = beta_q[3],
       P_beta_gt_0 = 1 - INLA::inla.pmarginal(0, marginal),

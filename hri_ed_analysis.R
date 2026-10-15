@@ -4,7 +4,6 @@ library(dplyr)
 library(tidyr)
 library(INLA)
 
-# Locate inputs relative to this document, without changing the working directory.
 script_files <- as.character(unlist(lapply(sys.frames(), function(frame) frame$ofile)))
 script_files <- script_files[basename(script_files) == "hri_ed_analysis.R"]
 command_file <- grep("^--file=", commandArgs(), value = TRUE)
@@ -13,7 +12,7 @@ project_dir <- if (length(script_files)) {
 } else if (length(command_file) && sub("^--file=", "", command_file[1]) != "-") {
   dirname(normalizePath(sub("^--file=", "", command_file[1]), mustWork = TRUE))
 } else {
-  getwd() # Running selected lines: use the project's working directory.
+  getwd() 
 }
 
 # ---- Settings ---------------------------------------------------------------
@@ -173,8 +172,7 @@ write.csv(final_table, paste0(input_dir, "/",
 # POSTERIOR CLUSTER-AVERAGE ATTRIBUTABLE RISK
 # ===========================================================================
 
-# ----- model coefficients: cluster-specific intercepts and slopes ---------
-
+# Model coefficients: cluster-specific intercepts and slopes
 p_table <- as.data.frame(poisson_inla$summary.fixed)
 p_table$term <- rownames(p_table)
 
