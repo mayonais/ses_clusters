@@ -1,0 +1,115 @@
+=== Correlations ===
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.9173  0.9303  0.9433  0.9377  0.9479  0.9524 
+
+
+=== Absolute Differences ===
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+0.009399 0.009876 0.010354 0.011246 0.012169 0.013984 
+
+
+Selected run: 3 out of 3 
+
+
+=== ZCTA counts ===
+Total CA ZCTAs: 1763 
+ACS included: 1741  | excluded: 22 
+
+Missing ZCTA codes (in reference list, not in acs_clean):
+ [1] "90071" "90079" "90090" "90095" "90506" "90747" "90831" "91371" "91608" "92132" "92222" "92338" "92364" "93064"
+[15] "93410" "93633" "93943" "94850" "95250" "95364" "95915" "96155"
+
+
+=== Cluster label counts ===
+
+                         White / High income               White / Older / Mid-low income 
+                                         262                                          238 
+             Hispanic / Younger / Low income                      White / Mid-high income 
+                                         165                                          161 
+                   Hispanic / Mid-low income                   White / Older / Low income 
+                                         126                                          120 
+                      White / Mid-low income          Hispanic / Younger / Mid-low income 
+                                         105                                          101 
+  Mixed racial composition / Mid-high income              White / Older / Mid-high income 
+                                          92                                           88 
+Hispanic & White / Younger / Mid-high income                           White / Low income 
+                                          51                                           49 
+                 White / Older / High income            Hispanic & White / Mid-low income 
+                                          47                                           45 
+      Mixed racial composition / High income                Hispanic & White / Low income 
+                                          37                                           29 
+     Hispanic & White / Younger / Low income 
+                                          25 
+
+
+=== PReMiuM Posterior Inclusion Probabilities (mean rho, averaged across runs) ===
+        pct_hispanic        education_low            pct_white        median_income   language_isolation 
+           0.9992502            0.9991544            0.9990652            0.9988288            0.9988245 
+        poverty_rate            pct_asian  outdoor_worker_rate       uninsured_rate         vehicle_rate 
+           0.9986675            0.9980621            0.9979529            0.9978334            0.9976399 
+           pct_age65            pct_age17      disability_rate            pct_black          renter_rate 
+           0.9973712            0.9971237            0.9969649            0.9963352            0.9963248 
+   unemployment_rate housing_overcrowding     alt_housing_rate   renter_burden_rate        no_phone_rate 
+           0.9962432            0.9946653            0.9933952            0.9892714            0.9877656 
+  elderly_alone_rate     old_housing_rate    owner_burden_rate 
+           0.9856731            0.9743481            0.8059852 
+
+
+=== Pairwise Correlations (|r| > 0.6) ===
+                var1          var2 correlation
+1 language_isolation     pct_white  -0.7770133
+2       pct_hispanic     pct_white  -0.7724204
+3 language_isolation  pct_hispanic   0.7368238
+4      median_income  poverty_rate  -0.7289665
+5      education_low  pct_hispanic   0.7132357
+6 language_isolation education_low   0.6735632
+7          pct_age65     pct_white   0.6357789
+8      education_low     pct_white  -0.6027115
+
+
+=== Variance Inflation Factor Check ===
+           pct_black            pct_asian         pct_hispanic         poverty_rate        median_income 
+            1.746619             2.296414             3.823748             2.845073             4.052182 
+       education_low    unemployment_rate            pct_age17            pct_age65       uninsured_rate 
+            4.550349             1.680715             1.927714             2.790648             2.201532 
+  language_isolation      disability_rate housing_overcrowding    owner_burden_rate   renter_burden_rate 
+            3.606547             2.067606             1.809014             1.202061             1.357373 
+ outdoor_worker_rate         vehicle_rate        no_phone_rate     old_housing_rate          renter_rate 
+            2.202265             1.903257             1.273918             1.388876             2.424977 
+    alt_housing_rate   elderly_alone_rate 
+            1.865463             1.506579 
+
+
+=== Missingness summary ===
+               variable n_missing pct_missing n_zero pct_zero
+1         median_income       114        6.55      0     0.00
+2    renter_burden_rate        68        3.91     74     4.42
+3    elderly_alone_rate        53        3.04     61     3.61
+4     owner_burden_rate        43        2.47     55     3.24
+5   outdoor_worker_rate        20        1.15     92     5.35
+6  housing_overcrowding        19        1.09    753    43.73
+7          vehicle_rate        19        1.09    242    14.05
+8         no_phone_rate        19        1.09    309    17.94
+9           renter_rate        19        1.09     49     2.85
+10    unemployment_rate        17        0.98    137     7.95
+11     old_housing_rate        14        0.80     10     0.58
+12     alt_housing_rate        14        0.80    225    13.03
+13         poverty_rate        13        0.75     76     4.40
+14       uninsured_rate         9        0.52    104     6.00
+15      disability_rate         9        0.52     34     1.96
+16        education_low         1        0.06    101     5.80
+17            pct_white         0        0.00     12     0.69
+18            pct_black         0        0.00    359    20.62
+19            pct_asian         0        0.00    284    16.31
+20         pct_hispanic         0        0.00     93     5.34
+21            pct_age17         0        0.00     91     5.23
+22            pct_age65         0        0.00     47     2.70
+23   language_isolation         0        0.00    280    16.08
+
+
+=== Completeness by ZCTA population ===
+# A tibble: 2 × 4
+  complete mean_pop median_pop     n
+  <lgl>       <dbl>      <dbl> <int>
+1 FALSE        583.        173   146
+2 TRUE       24486.      20586  1595

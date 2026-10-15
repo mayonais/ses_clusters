@@ -19,8 +19,6 @@ folder_name <- "Los_Angeles_discrete_none_MIN"
 
 options(tigris_use_cache = TRUE)
 
-#census_api_key("e3028f4138dfedd065a29bbe27a70a9", install = TRUE)
-
 # ========================================================================
 # VARIABLE SECTION
 # ========================================================================

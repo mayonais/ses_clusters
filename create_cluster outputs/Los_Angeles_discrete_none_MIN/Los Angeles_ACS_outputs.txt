@@ -1,0 +1,59 @@
+=== Correlations ===
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.9923  0.9933  0.9943  0.9949  0.9961  0.9980 
+
+
+=== Absolute Differences ===
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+0.007913 0.009932 0.011950 0.011489 0.013277 0.014603 
+
+
+Selected run: 2 out of 3 
+
+
+=== ZCTA counts ===
+Total CA ZCTAs: 321 
+ACS included: 309  | excluded: 12 
+
+Missing ZCTA codes (in reference list, not in acs_clean):
+ [1] "91371" "91125" "90506" "90071" "90079" "90639" "90831" "90747" "90052" "91608" "90840" "90095"
+
+
+=== Cluster label counts ===
+
+           Hispanic / Younger / Low income                        White / High income 
+                                        74                                         62 
+Mixed racial composition / Mid-high income                  Hispanic / Mid-low income 
+                                        45                                         35 
+                   White / Mid-high income                 Hispanic / Mid-high income 
+                                        34                                         27 
+            Asian / Older / Mid-low income                         White / Low income 
+                                        13                                         13 
+                    White / Mid-low income 
+                                         6 
+
+
+=== Missingness summary ===
+               variable n_missing pct_missing n_zero pct_zero
+1         median_income         6        1.94      0     0.00
+2    renter_burden_rate         5        1.62      0     0.00
+3  housing_overcrowding         5        1.62     43    14.14
+4          poverty_rate         4        1.29      1     0.33
+5      alt_housing_rate         4        1.29     39    12.79
+6        uninsured_rate         2        0.65      2     0.65
+7             pct_white         0        0.00      0     0.00
+8             pct_black         0        0.00      5     1.62
+9             pct_asian         0        0.00      3     0.97
+10         pct_hispanic         0        0.00      0     0.00
+11            pct_age17         0        0.00      4     1.29
+12            pct_age65         0        0.00      4     1.29
+13   language_isolation         0        0.00      3     0.97
+14        education_low         0        0.00      6     1.94
+
+
+=== Completeness by ZCTA population ===
+# A tibble: 2 × 4
+  complete mean_pop median_pop     n
+  <lgl>       <dbl>      <dbl> <int>
+1 FALSE       1701.       1381     6
+2 TRUE       36115.      33058   303

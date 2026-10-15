@@ -1,0 +1,89 @@
+====================================================================
+NEGATIVE BINOMIAL INLA - SIMULATED 2018 ED DATA
+INLA version:
+[1] ‘26.6.7’
+
+R version:
+[1] "R version 4.4.3 (2025-02-28 ucrt)"
+
+Reference cluster (lowest vulnerability): 2 
+====================================================================
+
+Time used:
+    Pre = 2.94, Running = 215, Post = 5.69, Total = 224 
+Fixed effects:
+                  mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -11.631 0.092    -11.811  -11.631    -11.452 -11.631   0
+cluster1         0.166 0.093     -0.016    0.166      0.348   0.166   0
+cluster3         0.326 0.092      0.146    0.326      0.507   0.326   0
+cluster4         0.422 0.093      0.240    0.422      0.604   0.422   0
+cluster5         0.397 0.092      0.217    0.397      0.577   0.397   0
+cluster6         0.044 0.106     -0.163    0.044      0.251   0.044   0
+cluster7         0.211 0.127     -0.038    0.211      0.461   0.211   0
+cluster8        -0.135 0.092     -0.316   -0.135      0.045  -0.135   0
+cluster9        -0.255 0.093     -0.437   -0.255     -0.073  -0.255   0
+cluster10        0.310 0.093      0.127    0.310      0.492   0.310   0
+cluster11       -0.044 0.094     -0.228   -0.044      0.140  -0.044   0
+cluster12        0.053 0.096     -0.135    0.053      0.241   0.053   0
+cluster13        0.123 0.113     -0.099    0.123      0.346   0.123   0
+cluster14       -0.002 0.093     -0.185   -0.002      0.181  -0.002   0
+cluster15        0.101 0.101     -0.098    0.101      0.299   0.101   0
+cluster16       -0.043 0.095     -0.228   -0.043      0.142  -0.043   0
+cluster17        0.272 0.092      0.092    0.272      0.452   0.272   0
+cluster18       -0.146 0.098     -0.338   -0.146      0.046  -0.146   0
+cluster19        0.205 0.096      0.016    0.205      0.394   0.205   0
+cluster20        0.096 0.092     -0.084    0.096      0.276   0.096   0
+cluster21       -0.199 0.107     -0.408   -0.199      0.011  -0.199   0
+cluster22       -0.014 0.093     -0.196   -0.014      0.168  -0.014   0
+cluster23        0.115 0.093     -0.066    0.115      0.297   0.115   0
+cluster24       -0.187 0.093     -0.370   -0.187     -0.005  -0.187   0
+cluster25       -0.189 0.093     -0.371   -0.189     -0.006  -0.189   0
+cluster26        0.182 0.096     -0.005    0.182      0.370   0.182   0
+cluster27       -0.036 0.108     -0.248   -0.036      0.175  -0.036   0
+cluster28       -0.265 0.095     -0.452   -0.265     -0.079  -0.265   0
+cluster29       -0.287 0.092     -0.469   -0.287     -0.106  -0.287   0
+cluster30        0.002 0.129     -0.251    0.002      0.255   0.002   0
+year2018        -0.277 0.008     -0.292   -0.277     -0.262  -0.277   0
+day_of_weekMon  -0.004 0.014     -0.032   -0.004      0.024  -0.004   0
+day_of_weekTue   0.002 0.014     -0.026    0.002      0.030   0.002   0
+day_of_weekWed  -0.012 0.014     -0.039   -0.012      0.016  -0.012   0
+day_of_weekThu  -0.014 0.014     -0.042   -0.014      0.014  -0.014   0
+day_of_weekFri  -0.015 0.014     -0.043   -0.015      0.012  -0.015   0
+day_of_weekSat  -0.009 0.014     -0.037   -0.009      0.018  -0.009   0
+
+Random effects:
+  Name	  Model
+    day_of_year RW2 model
+
+Model hyperparameters:
+                                                         mean     sd 0.025quant 0.5quant 0.975quant   mode
+size for the nbinomial observations (1/overdispersion)  0.449  0.004      0.442    0.449      0.456  0.449
+Precision for day_of_year                              37.364 15.695     14.888   34.646     75.504 29.649
+
+Deviance Information Criterion (DIC) ...............: 571729.86
+Deviance Information Criterion (DIC, saturated) ....: -24608416.94
+Effective number of parameters .....................: 49.47
+
+Watanabe-Akaike information criterion (WAIC) ...: 571730.60
+Effective number of parameters .................: 50.18
+
+Marginal log-Likelihood:  -286975.90 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+====================================================================
+
+DIC:
+[1] 571729.9
+
+WAIC:
+[1] 571730.6
+
+====================================================================
+
+ZERO-INFLATION DIAGNOSTIC (observed vs. NB-predicted)
+Observed zero proportion: 0.8716489 
+NB-predicted zero proportion: 0.8717519 
+Excess zeros (observed - predicted): -0.0001030101 

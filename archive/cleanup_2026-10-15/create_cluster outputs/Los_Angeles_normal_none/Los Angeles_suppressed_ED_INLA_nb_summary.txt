@@ -1,0 +1,65 @@
+====================================================================
+NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA
+INLA version:
+[1] ‘26.6.7’
+
+R version:
+[1] "R version 4.4.3 (2025-02-28 ucrt)"
+
+Reference cluster (lowest vulnerability): 7 
+====================================================================
+
+Time used:
+    Pre = 0.841, Running = 42.6, Post = 0.942, Total = 44.3 
+Fixed effects:
+                  mean     sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -32.262  8.350    -48.636  -32.262    -15.889 -32.262   0
+cluster1        20.859  8.350      4.486   20.859     37.232  20.859   0
+cluster2        20.630  8.350      4.257   20.630     37.004  20.630   0
+cluster3       -24.067 15.793    -55.036  -24.067      6.902 -24.067   0
+cluster4        20.976  8.353      4.596   20.976     37.356  20.976   0
+cluster5        22.310  8.359      5.919   22.310     38.700  22.310   0
+cluster6       -24.546 16.451    -56.805  -24.546      7.714 -24.546   0
+day_of_weekMon   0.039  0.062     -0.083    0.039      0.160   0.039   0
+day_of_weekTue  -0.004  0.061     -0.125   -0.004      0.116  -0.004   0
+day_of_weekWed   0.001  0.061     -0.120    0.001      0.121   0.001   0
+day_of_weekThu   0.027  0.062     -0.094    0.027      0.148   0.027   0
+day_of_weekFri   0.044  0.062     -0.077    0.044      0.165   0.044   0
+day_of_weekSat   0.005  0.062     -0.117    0.005      0.126   0.005   0
+
+Random effects:
+  Name	  Model
+    doy RW2 model
+
+Model hyperparameters:
+                                                           mean       sd 0.025quant 0.5quant 0.975quant    mode
+size for the nbinomial observations (1/overdispersion)    0.097    0.002      0.094    0.097      0.101   0.097
+Precision for doy                                      1932.499 2671.070    138.878 1128.445   8684.648 367.619
+
+Deviance Information Criterion (DIC) ...............: 65646.99
+Deviance Information Criterion (DIC, saturated) ....: -354992.95
+Effective number of parameters .....................: 15.14
+
+Watanabe-Akaike information criterion (WAIC) ...: 65658.29
+Effective number of parameters .................: 24.70
+
+Marginal log-Likelihood:  -33757.00 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+====================================================================
+
+DIC:
+[1] 65646.99
+
+WAIC:
+[1] 65658.29
+
+====================================================================
+
+ZERO-INFLATION DIAGNOSTIC (observed vs. NB-predicted)
+Observed zero proportion: 0.8765478 
+NB-predicted zero proportion: 0.8672118 
+Excess zeros (observed - predicted): 0.00933594 

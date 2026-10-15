@@ -1,0 +1,11 @@
+=== Daily (summed) vs Monthly reported HRI ED counts ===
+Zip-months compared: 10294 
+
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-602.00  -61.00    1.00  -35.02   29.00  553.00 
+
+% difference summary:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+-100.00  -31.52   15.61  129.01  133.04 2500.00     754 
+
+Correlation between daily-summed and monthly-reported: 0.8141903 

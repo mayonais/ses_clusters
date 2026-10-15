@@ -1,0 +1,71 @@
+====================================================================
+NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA
+INLA version:
+[1] ‘26.6.7’
+
+R version:
+[1] "R version 4.4.3 (2025-02-28 ucrt)"
+
+Reference cluster (lowest vulnerability): 6 
+====================================================================
+
+Time used:
+    Pre = 7.78, Running = 35.1, Post = 0.901, Total = 43.8 
+Fixed effects:
+                  mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -11.292 0.058    -11.406  -11.292    -11.177 -11.292   0
+cluster1        -0.500 0.058     -0.614   -0.500     -0.386  -0.500   0
+cluster10       -0.225 0.068     -0.359   -0.225     -0.091  -0.225   0
+cluster11       -0.571 0.089     -0.745   -0.571     -0.397  -0.571   0
+cluster12       -0.397 0.076     -0.545   -0.397     -0.249  -0.397   0
+cluster13       -0.270 0.109     -0.484   -0.270     -0.055  -0.270   0
+cluster2        -0.014 0.095     -0.200   -0.014      0.172  -0.014   0
+cluster3        -0.437 0.062     -0.559   -0.437     -0.314  -0.437   0
+cluster4        -0.150 0.088     -0.321   -0.150      0.022  -0.150   0
+cluster5         0.206 0.093      0.024    0.206      0.388   0.206   0
+cluster7        -0.320 0.075     -0.467   -0.320     -0.173  -0.320   0
+cluster8        -0.260 0.066     -0.389   -0.260     -0.130  -0.260   0
+cluster9        -0.540 0.106     -0.748   -0.540     -0.332  -0.540   0
+day_of_weekMon   0.045 0.061     -0.075    0.045      0.165   0.045   0
+day_of_weekTue   0.007 0.061     -0.112    0.007      0.126   0.007   0
+day_of_weekWed   0.010 0.061     -0.109    0.010      0.129   0.010   0
+day_of_weekThu   0.024 0.061     -0.096    0.024      0.144   0.024   0
+day_of_weekFri   0.050 0.061     -0.070    0.050      0.169   0.050   0
+day_of_weekSat   0.016 0.061     -0.105    0.016      0.136   0.016   0
+
+Random effects:
+  Name	  Model
+    doy RW2 model
+
+Model hyperparameters:
+                                                           mean       sd 0.025quant 0.5quant 0.975quant    mode
+size for the nbinomial observations (1/overdispersion)    0.098    0.002      0.095  9.8e-02   1.02e-01   0.098
+Precision for doy                                      2542.838 4265.025    131.506  1.3e+03   1.27e+04 336.171
+
+Deviance Information Criterion (DIC) ...............: 65573.45
+Deviance Information Criterion (DIC, saturated) ....: -364487.09
+Effective number of parameters .....................: 23.25
+
+Watanabe-Akaike information criterion (WAIC) ...: 65580.75
+Effective number of parameters .................: 30.28
+
+Marginal log-Likelihood:  -33765.84 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+====================================================================
+
+DIC:
+[1] 65573.45
+
+WAIC:
+[1] 65580.75
+
+====================================================================
+
+ZERO-INFLATION DIAGNOSTIC (observed vs. NB-predicted)
+Observed zero proportion: 0.8765478 
+NB-predicted zero proportion: 0.8753847 
+Excess zeros (observed - predicted): 0.001163057 

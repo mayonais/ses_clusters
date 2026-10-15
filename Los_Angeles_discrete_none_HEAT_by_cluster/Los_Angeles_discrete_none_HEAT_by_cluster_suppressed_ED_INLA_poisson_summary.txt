@@ -10,7 +10,7 @@ Reference cluster (lowest vulnerability): 6
 ====================================================================
 
 Time used:
-    Pre = 2.41, Running = 10.7, Post = 1.14, Total = 14.2 
+    Pre = 1.69, Running = 6.52, Post = 1.07, Total = 9.28 
 Fixed effects:
                         mean    sd 0.025quant 0.5quant 0.975quant    mode kld
 (Intercept)          -11.481 0.250    -12.001  -11.472    -11.013 -11.472   0
@@ -28,6 +28,7 @@ cluster7              -0.543 0.111     -0.760   -0.543     -0.326  -0.543   0
 cluster8              -0.090 0.049     -0.186   -0.090      0.005  -0.090   0
 cluster9              -0.205 0.033     -0.271   -0.205     -0.140  -0.205   0
 chronic_heat           0.027 0.038     -0.047    0.027      0.102   0.027   0
+acute_heat             0.389 0.060      0.269    0.389      0.506   0.389   0
 month6                -0.292 0.190     -0.672   -0.290      0.078  -0.290   0
 month7                -0.221 0.296     -0.766   -0.235      0.405  -0.279   0
 month8                 0.164 0.356     -0.489    0.147      0.920   0.093   0
@@ -39,20 +40,19 @@ day_of_weekWed         0.073 0.043     -0.011    0.073      0.160   0.073   0
 day_of_weekThu         0.083 0.043     -0.001    0.083      0.169   0.083   0
 day_of_weekFri         0.069 0.040     -0.009    0.069      0.149   0.069   0
 day_of_weekSat         0.034 0.034     -0.033    0.034      0.102   0.034   0
-cluster6:acute_heat    0.389 0.060      0.269    0.389      0.506   0.389   0
-cluster1:acute_heat    0.435 0.057      0.322    0.436      0.545   0.436   0
-cluster10:acute_heat   0.305 0.105      0.099    0.305      0.511   0.305   0
-cluster11:acute_heat   0.364 0.061      0.243    0.364      0.483   0.364   0
-cluster12:acute_heat   0.335 0.109      0.121    0.335      0.548   0.335   0
-cluster13:acute_heat   0.473 0.068      0.338    0.474      0.607   0.474   0
-cluster14:acute_heat   0.448 0.068      0.315    0.448      0.580   0.448   0
-cluster2:acute_heat    0.322 0.084      0.157    0.322      0.486   0.322   0
-cluster3:acute_heat    0.445 0.059      0.327    0.446      0.561   0.446   0
-cluster4:acute_heat    0.403 0.068      0.269    0.403      0.536   0.403   0
-cluster5:acute_heat    0.460 0.087      0.291    0.460      0.630   0.460   0
-cluster7:acute_heat    0.233 0.102      0.034    0.233      0.433   0.233   0
-cluster8:acute_heat    0.597 0.087      0.426    0.597      0.766   0.597   0
-cluster9:acute_heat    0.303 0.059      0.187    0.303      0.416   0.303   0
+cluster1:acute_heat    0.047 0.061     -0.074    0.047      0.167   0.047   0
+cluster10:acute_heat  -0.084 0.109     -0.297   -0.084      0.129  -0.084   0
+cluster11:acute_heat  -0.025 0.068     -0.157   -0.025      0.108  -0.025   0
+cluster12:acute_heat  -0.054 0.111     -0.271   -0.054      0.164  -0.054   0
+cluster13:acute_heat   0.085 0.074     -0.060    0.085      0.229   0.085   0
+cluster14:acute_heat   0.059 0.075     -0.087    0.059      0.206   0.059   0
+cluster2:acute_heat   -0.067 0.089     -0.240   -0.067      0.107  -0.067   0
+cluster3:acute_heat    0.056 0.065     -0.072    0.056      0.185   0.056   0
+cluster4:acute_heat    0.014 0.077     -0.137    0.014      0.165   0.014   0
+cluster5:acute_heat    0.072 0.102     -0.128    0.072      0.271   0.072   0
+cluster7:acute_heat   -0.155 0.116     -0.382   -0.155      0.071  -0.155   0
+cluster8:acute_heat    0.208 0.093      0.026    0.208      0.390   0.208   0
+cluster9:acute_heat   -0.086 0.066     -0.216   -0.086      0.044  -0.086   0
 
 Random effects:
   Name	  Model
@@ -62,12 +62,12 @@ Model hyperparameters:
                    mean    sd 0.025quant 0.5quant 0.975quant  mode
 Precision for doy 0.014 0.014      0.001     0.01      0.052 0.002
 
-Deviance Information Criterion (DIC) ...............: 93190.02
-Deviance Information Criterion (DIC, saturated) ....: 74688.69
-Effective number of parameters .....................: 100.69
+Deviance Information Criterion (DIC) ...............: 93190.01
+Deviance Information Criterion (DIC, saturated) ....: 74688.68
+Effective number of parameters .....................: 100.68
 
-Watanabe-Akaike information criterion (WAIC) ...: 93404.55
-Effective number of parameters .................: 447.12
+Watanabe-Akaike information criterion (WAIC) ...: 93404.56
+Effective number of parameters .................: 447.13
 
 Marginal log-Likelihood:  -47761.27 
  is computed 
@@ -79,7 +79,14 @@ Posterior summaries for the linear predictor and the fitted values are computed
 ====================================================================
 
 DIC:
-[1] 93190.02
+[1] 93190.01
 
 WAIC:
-[1] 93404.55
+[1] 93404.56
+
+====================================================================
+
+ZERO-INFLATION DIAGNOSTIC (observed vs. Poisson-predicted)
+Observed zero proportion: 0.8765478 
+Poisson-predicted zero proportion: 0.7565638 
+Excess zeros (observed - predicted): 0.119984 

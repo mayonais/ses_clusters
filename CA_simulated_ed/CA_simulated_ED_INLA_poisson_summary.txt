@@ -1,0 +1,82 @@
+====================================================================
+POISSON INLA - SIMULATED 2018 ED DATA
+INLA version:
+[1] ‘26.6.7’
+
+R version:
+[1] "R version 4.4.3 (2025-02-28 ucrt)"
+
+Reference cluster (lowest vulnerability): 2 
+====================================================================
+
+Time used:
+    Pre = 4.33, Running = 31.2, Post = 4.54, Total = 40 
+Fixed effects:
+                  mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -11.629 0.090    -11.807  -11.629    -11.452 -11.629   0
+cluster1         0.159 0.091     -0.019    0.159      0.338   0.159   0
+cluster3         0.328 0.091      0.150    0.328      0.505   0.328   0
+cluster4         0.449 0.091      0.271    0.449      0.628   0.449   0
+cluster5         0.392 0.090      0.214    0.392      0.569   0.392   0
+cluster6         0.045 0.104     -0.159    0.045      0.250   0.045   0
+cluster7         0.194 0.125     -0.051    0.194      0.439   0.194   0
+cluster8        -0.131 0.091     -0.309   -0.131      0.047  -0.131   0
+cluster9        -0.256 0.091     -0.435   -0.256     -0.076  -0.256   0
+cluster10        0.316 0.091      0.138    0.316      0.495   0.316   0
+cluster11       -0.034 0.092     -0.215   -0.034      0.147  -0.034   0
+cluster12        0.028 0.094     -0.156    0.028      0.212   0.028   0
+cluster13        0.115 0.111     -0.102    0.115      0.333   0.115   0
+cluster14       -0.023 0.091     -0.202   -0.023      0.156  -0.023   0
+cluster15        0.081 0.097     -0.108    0.081      0.271   0.081   0
+cluster16       -0.054 0.092     -0.235   -0.054      0.128  -0.054   0
+cluster17        0.282 0.090      0.104    0.282      0.459   0.282   0
+cluster18       -0.162 0.096     -0.351   -0.162      0.026  -0.162   0
+cluster19        0.208 0.093      0.025    0.208      0.390   0.208   0
+cluster20        0.084 0.091     -0.093    0.084      0.262   0.084   0
+cluster21       -0.207 0.102     -0.408   -0.207     -0.007  -0.207   0
+cluster22       -0.010 0.091     -0.188   -0.010      0.169  -0.010   0
+cluster23        0.089 0.091     -0.090    0.089      0.267   0.089   0
+cluster24       -0.200 0.091     -0.379   -0.200     -0.021  -0.200   0
+cluster25       -0.218 0.091     -0.397   -0.218     -0.039  -0.218   0
+cluster26        0.176 0.093     -0.006    0.176      0.358   0.176   0
+cluster27       -0.045 0.105     -0.251   -0.045      0.161  -0.045   0
+cluster28       -0.276 0.093     -0.458   -0.276     -0.093  -0.276   0
+cluster29       -0.293 0.091     -0.471   -0.293     -0.114  -0.293   0
+cluster30       -0.036 0.119     -0.271   -0.036      0.198  -0.036   0
+year2018        -0.280 0.005     -0.290   -0.280     -0.269  -0.280   0
+day_of_weekMon   0.005 0.010     -0.015    0.005      0.024   0.005   0
+day_of_weekTue   0.006 0.010     -0.013    0.006      0.026   0.006   0
+day_of_weekWed  -0.005 0.010     -0.025   -0.005      0.014  -0.005   0
+day_of_weekThu  -0.015 0.010     -0.034   -0.015      0.005  -0.015   0
+day_of_weekFri  -0.011 0.010     -0.031   -0.011      0.008  -0.011   0
+day_of_weekSat  -0.008 0.010     -0.027   -0.008      0.012  -0.008   0
+
+Random effects:
+  Name	  Model
+    day_of_year RW2 model
+
+Model hyperparameters:
+                           mean    sd 0.025quant 0.5quant 0.975quant  mode
+Precision for day_of_year 28.60 13.06       9.82    26.38      60.11 21.96
+
+Deviance Information Criterion (DIC) ...............: 640420.28
+Deviance Information Criterion (DIC, saturated) ....: 447745.09
+Effective number of parameters .....................: 51.81
+
+Watanabe-Akaike information criterion (WAIC) ...: 639981.60
+Effective number of parameters .................: 104.67
+
+Marginal log-Likelihood:  -321322.34 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+
+====================================================================
+
+DIC:
+[1] 640420.3
+
+WAIC:
+[1] 639981.6

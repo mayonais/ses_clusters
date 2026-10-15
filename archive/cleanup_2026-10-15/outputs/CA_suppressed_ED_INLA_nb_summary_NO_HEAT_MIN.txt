@@ -1,0 +1,83 @@
+====================================================================
+NEGATIVE BINOMIAL INLA - SUPPRESSED 2018 ED DATA (uniform no-heat imputation + minimal set of SES vars)
+INLA version:
+[1] ‘26.6.7’
+
+R version:
+[1] "R version 4.4.3 (2025-02-28 ucrt)"
+
+Reference cluster (lowest vulnerability): 24 
+====================================================================
+
+Time used:
+    Pre = 1.7, Running = 115, Post = 5, Total = 121 
+Fixed effects:
+                  mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -11.463 0.037    -11.536  -11.463    -11.391 -11.463   0
+cluster1         0.887 0.057      0.775    0.887      0.999   0.887   0
+cluster10       -0.192 0.062     -0.312   -0.192     -0.071  -0.192   0
+cluster11        1.052 0.125      0.806    1.052      1.297   1.052   0
+cluster12        0.451 0.049      0.354    0.451      0.548   0.451   0
+cluster13        0.990 0.068      0.857    0.990      1.123   0.990   0
+cluster14        0.352 0.059      0.237    0.352      0.468   0.352   0
+cluster15        0.068 0.048     -0.025    0.068      0.162   0.068   0
+cluster16       -0.167 0.042     -0.248   -0.167     -0.085  -0.167   0
+cluster17       -0.236 0.046     -0.326   -0.236     -0.146  -0.236   0
+cluster18       -0.047 0.055     -0.155   -0.047      0.060  -0.047   0
+cluster19        0.731 0.145      0.448    0.731      1.015   0.731   0
+cluster2         1.631 0.052      1.528    1.631      1.733   1.631   0
+cluster20       -0.491 0.089     -0.665   -0.491     -0.317  -0.491   0
+cluster21        0.147 0.079     -0.007    0.147      0.302   0.147   0
+cluster22        1.157 0.072      1.016    1.157      1.298   1.157   0
+cluster23       -0.328 0.054     -0.433   -0.328     -0.224  -0.328   0
+cluster25       -0.038 0.049     -0.133   -0.038      0.057  -0.038   0
+cluster3         0.566 0.046      0.475    0.566      0.657   0.566   0
+cluster4        -0.341 0.040     -0.419   -0.341     -0.263  -0.341   0
+cluster5        -0.134 0.042     -0.215   -0.134     -0.052  -0.134   0
+cluster6         0.971 0.044      0.884    0.971      1.058   0.971   0
+cluster7        -0.043 0.047     -0.136   -0.043      0.050  -0.043   0
+cluster8        -0.293 0.045     -0.382   -0.293     -0.204  -0.293   0
+cluster9         1.238 0.068      1.105    1.238      1.372   1.238   0
+day_of_weekMon   0.059 0.031     -0.003    0.059      0.120   0.059   0
+day_of_weekTue  -0.003 0.033     -0.067   -0.003      0.061  -0.003   0
+day_of_weekWed   0.072 0.033      0.006    0.072      0.137   0.072   0
+day_of_weekThu   0.027 0.033     -0.039    0.027      0.093   0.027   0
+day_of_weekFri   0.101 0.033      0.037    0.101      0.164   0.101   0
+day_of_weekSat   0.025 0.031     -0.036    0.025      0.087   0.025   0
+
+Random effects:
+  Name	  Model
+    doy RW2 model
+
+Model hyperparameters:
+                                                        mean    sd 0.025quant 0.5quant 0.975quant  mode
+size for the nbinomial observations (1/overdispersion) 0.086 0.001      0.084    0.086      0.087 0.086
+Precision for doy                                      0.047 0.022      0.017    0.043      0.102 0.035
+
+Deviance Information Criterion (DIC) ...............: 277815.38
+Deviance Information Criterion (DIC, saturated) ....: -1764375.52
+Effective number of parameters .....................: 77.45
+
+Watanabe-Akaike information criterion (WAIC) ...: 277880.34
+Effective number of parameters .................: 147.14
+
+Marginal log-Likelihood:  -140030.68 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+
+
+====================================================================
+
+DIC:
+[1] 277815.4
+
+WAIC:
+[1] 277880.3
+
+====================================================================
+
+ZERO-INFLATION DIAGNOSTIC (observed vs. NB-predicted)
+Observed zero proportion: 0.90935 
+NB-predicted zero proportion: 0.9089787 
+Excess zeros (observed - predicted): 0.0003712794 

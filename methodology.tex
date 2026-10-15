@@ -1,0 +1,428 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,array}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,pdftitle={Methods and Supplementary Materials: California Heat and ED Analysis}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Prob}{\operatorname{Pr}}
+\newcommand{\sourcefile}[1]{\par\textit{Source:} \code{#1}.\par}
+\title{Socioeconomic Profiles, Heat Exposure, and Emergency Department Visits\\\large Methods and Supplementary Materials}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+\textit{Manuscript status.} This draft describes the analysis specified by the eight included R scripts. It does not certify execution or report empirical results. Data provenance, study dates, outcome definitions, software settings, and the implementation issues in Appendix~\ref{sec:limitations} require confirmation before submission.
+
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Study design and geographic units}
+The analysis was specified as an ecological study of daily emergency department (ED) visit counts and heat exposure across ZIP Code Tabulation Areas (ZCTAs) intersecting Los Angeles County, California. The observation unit was an area--day. Socioeconomic profiles were constructed from 2018 American Community Survey (ACS) five-year estimates. Areas with positive population were retained, and county inclusion was determined by intersection of 2020 ZCTA polygons with the county boundary. Whole-ZCTA socioeconomic estimates were retained for intersecting areas; clipping polygons for mapping did not apportion covariates to the portion inside the county.
+
+Daily ED records were linked to socioeconomic profiles by direct correspondence between ZIP strings and ZCTA identifiers and restricted to areas with cluster assignments and positive population. The modeled count was D2, reconstructed from daily and monthly source records. Heat exposure was represented by the supplied daily maximum heat-index variable. The observational study dates, D2 diagnosis definition, source population, and exposure provenance require confirmation before publication; they are not established by the source code alone.
+
+\subsection{Socioeconomic characteristics and profile clustering}
+Twenty area-level characteristics represented racial and ethnic composition, income and poverty, unemployment, education, age structure, insurance, English proficiency, disability, household circumstances, housing conditions, and occupational exposure. Most characteristics were ratios of selected ACS counts to their corresponding population or household denominators; median household income was retained as a monetary estimate. Supplement~\ref{supp:indicators} provides the source-defined measures. ACS point estimates were used without propagating uncertainty from their margins of error.
+
+Each characteristic was converted into four approximately equal-frequency categories within the selected geographic sample. Categorical profiles were clustered using PReMiuM, with the response excluded and variable selection disabled. ED outcomes therefore did not influence cluster formation. Each area contributed one profile without population weighting. The specified settings were 2,000 burn-in iterations and \code{nSweeps = 10000}; other prior and fitting settings were delegated to package defaults.
+
+For each pair of completed runs, the posterior dissimilarity matrices were compared using correlation and elementwise mean absolute difference. These differences were averaged for each run, and the run with the smallest average was selected. The package's optimal-clustering routine was then applied to that selected run to obtain the final partition. Downstream count models conditioned on this partition rather than propagating uncertainty in cluster membership. Clusters were described using original-scale covariate medians, with income labels based on sample-wide quartiles and age labels based on upper-quartile older- and younger-population shares. Race and ethnicity labels summarized leading group shares according to the composition rules in Supplement~\ref{supp:partition}.
+
+\subsection{Vulnerability index and reference category}
+A custom rank-based index was calculated separately from the clustering procedure, using the original-scale area characteristics. Indicator ranks were oriented so that higher values indicated greater vulnerability; income ranks were reversed. Indicators were averaged within five domains: socioeconomic conditions, household characteristics, minority composition, housing, and occupational exposure. The domain means were equally weighted:
+\begin{equation}
+V_i=\frac{1}{5}\sum_{d=1}^{5}D_{id}.
+\label{eq:methods-index}
+\end{equation}
+Here, \(D_{id}\) is the mean oriented indicator rank for area \(i\) in domain \(d\). This expression applies when all five domains are defined. Missing indicators were omitted from within-domain averages and undefined domains were omitted from the overall average, changing effective weights where information was missing. Defined area scores were averaged within each cluster with equal area weights; missing scores were omitted. The cluster with the lowest average vulnerability was selected as the regression reference. The index was not included as a continuous predictor in the observational count model.
+
+\subsection{Reconstruction of suppressed counts}
+Daily entries identified as suppressed by a leading less-than sign were initially assigned integer counts sampled uniformly from 1 through 11 with a fixed random seed. The imputation did not use heat exposure. Counts were then reconciled with monthly information using a largest-remainder integer allocation.
+
+For each ZIP--month with an exact monthly count, the allocation target was that count rounded to the nearest integer. If the monthly count was reported as less than \(U\), reallocation was applied only when the initial daily counts summed to at least \(U\); in that case, the target was \(U-1\).
+
+To allocate a target across days, one visit was first reserved for each originally suppressed day. The number of visits left to distribute was the target minus these reserved visits, or zero if this difference was negative. These remaining visits were allocated across all daily rows, including originally unsuppressed rows, in proportion to their initial counts. Equal shares were used if the initial counts summed to zero. Each day's share was rounded down to a whole number. Any visits left after rounding were then assigned one at a time to the days with the largest discarded fractional parts, with ties resolved by row order. Each day's final count was its reserved visit, if any, plus its allocation. This procedure matched the target when the target was at least the number of reserved visits and the allocation weights were valid.
+
+For a suppressed monthly count, an initial daily total already between one and \(U-1\) was retained; if that total was zero, one visit was assigned to a randomly selected day. Supplement~\ref{supp:allocation} provides the equations and feasibility conditions.
+
+The algorithm can modify originally exact daily observations and does not impose a final daily upper bound of 11. The models conditioned on one reconstructed dataset; uncertainty from suppression reconstruction was not propagated into posterior intervals.
+
+\subsection{Heat exposure decomposition}
+Let \(H_{it}\) denote heat exposure for area \(i\) on day \(t\). Exposure was standardized using the mean and standard deviation across available area--day records and decomposed into persistent and daily components:
+\begin{equation}
+Z_{it}=\frac{H_{it}-\bar H}{s_H},\qquad
+C_i=\frac{1}{T_i}\sum_{t\in\mathcal T_i}Z_{it},\qquad
+A_{it}=Z_{it}-C_i.
+\label{eq:methods-heat}
+\end{equation}
+Here \(\mathcal T_i\) is the set of days with nonmissing heat measurements for area \(i\), and \(T_i=|\mathcal T_i|\). The overall mean \(\bar H\) and sample standard deviation \(s_H\) also omit missing heat values. The component \(C_i\) represents mean exposure over the observed period and \(A_{it}\) the daily departure from that area-specific mean. The term chronic heat refers to the observed-period mean rather than a separate climatological normal. Both components use the same global heat standard deviation.
+
+\subsection{Daily ED count models}
+Poisson and negative-binomial models were specified with population exposure \(N_{it}\), a log link, and the shared predictor
+\begin{align}
+\mu_{it}&=N_{it}\exp(\eta_{it}),\\
+\eta_{it}&=\alpha+\gamma_{k(i)}+\theta C_i+\beta_{k(i)}A_{it}\nonumber\\
+&\quad+m_{\operatorname{month}(t)}
++w_{\operatorname{weekday}(t)}+f_{\operatorname{doy}(t)}.
+\label{eq:methods-model}
+\end{align}
+Here \(Y_{it}\) is the daily count, \(\mu_{it}\) its conditional expected value, \(\eta_{it}\) the log rate per person, and \(k(i)\) the selected cluster assignment for area \(i\). Population enters as the exposure offset \(\log N_{it}\). The reference cluster \(k_0\) had \(\gamma_{k_0}=0\). Acute-heat slopes were parameterized as \(\beta_k=\beta+\delta_k\), with \(\delta_{k_0}=0\), while the chronic-heat coefficient was shared across clusters. Month and weekday were categorical adjustments. Day of year was modeled by a scaled, constrained second-order random walk; no cyclic annual boundary condition was explicitly specified.
+
+The Poisson variance was \(\mu_{it}\). In the mean--size negative-binomial representation, the variance was \(\mu_{it}+\mu_{it}^2/\kappa\). Approximate Bayesian inference was specified using integrated nested Laplace approximation (INLA). Deviance information criterion (DIC), Watanabe--Akaike information criterion (WAIC), fitted values, and posterior coefficient summaries were requested for both models. Observed zero proportions were compared with plug-in model-based zero probabilities. These comparisons were descriptive checks rather than formal tests for structural zero inflation.
+
+Observational postprocessing used the Poisson fit; no automatic likelihood-selection procedure was encoded. The active observational formula did not include a ZIP random intercept, spatial random effect, lagged heat, nonlinear acute-heat response, or year effect. Priors and detailed identification conventions not explicitly specified in the scripts were delegated to package defaults.
+
+\subsection{Rate ratios and heat associations}
+Cluster main-effect incidence rate ratios (IRRs) were summarized by \(\exp\{\E(\gamma_k\mid Y)\}\). Endpoints of 95\% equal-tail credible intervals were obtained by exponentiating the corresponding log-coefficient quantiles. These contrasts compare clusters at zero acute anomaly while holding chronic heat and temporal terms fixed. At acute anomaly \(a\), the reference-relative contrast is
+\begin{equation}
+\mathrm{IRR}_k(a)=\exp(\gamma_k+\delta_k a).
+\end{equation}
+Posterior probabilities \(\Prob(\gamma_k>0\mid Y)\) were also calculated. These probabilities were not interpreted as frequentist \(p\)-values.
+
+Cluster-specific acute slopes were summarized using INLA linear combinations of the shared slope and cluster interaction. This preserved covariance between the two coefficients. The analysis reported slope means and \(\Prob(\beta_k>0\mid Y)\). A one-unit acute increment corresponds to one global standard deviation of heat exposure. Associations were interpreted at the area level and did not establish individual susceptibility or causal effects.
+
+\subsection{Signed cluster-average excess rates}
+Let \(\mathcal I_k\) contain the observed area--day rows assigned to cluster \(k\), with \(n_k^*=|\mathcal I_k|\). For this cluster, reference heat was defined as the mean of \(C_i\) across its observed area--day rows:
+\begin{equation}
+\bar C_k=\frac{1}{n_k^*}\sum_{(i,t)\in\mathcal I_k}C_i,
+\qquad \Delta_{it}=Z_{it}-\bar C_{k(i)}.
+\end{equation}
+For joint posterior draw \(s\), the signed contrast per 10,000 population per day was
+\begin{equation}
+R_{it}^{(s)}=10{,}000\exp(\eta_{it}^{(s)})
+\left[1-\exp\{-\beta_{k(i)}^{(s)}\Delta_{it}\}\right].
+\label{eq:methods-ar}
+\end{equation}
+This compares the fitted rate with the rate obtained by setting daily standardized heat to the cluster reference while holding chronic heat and all other model terms fixed. It does not recompute chronic heat under an altered exposure history.
+
+Signed contrasts, including negative contributions, were averaged with equal area--day weights within each draw:
+\begin{equation}
+\bar R_k^{(s)}=\frac{1}{n_k^*}\sum_{\mathcal I_k}R_{it}^{(s)}.
+\end{equation}
+The posterior calculation requested 4,000 joint draws in batches of 200 and summarized the mean, 2.5th and 97.5th percentiles, and proportion of draws with \(\bar R_k^{(s)}>0\). The target is an average signed excess rate, not a population-weighted burden or total attributable count. Its exceedance probability concerns the aggregate contrast rather than the slope or the fraction of days with positive risk.
+
+\subsection{Simulation assessment}
+A separate simulation was specified for May--October in 2017 and 2018 using 2018 ACS populations. Daily baseline rates followed a Gaussian-shaped seasonal curve centered on day 200 with width parameter 50 days, normalized within each year to input totals of 19.6 and 14.9 visits per 10,000, respectively. These were calibration inputs; the generator did not perform age adjustment.
+
+Cluster risk multipliers were exponentials of standardized cluster vulnerability scores with log-risk scale 0.20. Persistent ZIP-level variation and independent gamma-distributed daily multipliers were applied before Poisson sampling. Gamma shape and rate were both 0.5, producing negative-binomial overdispersion conditional on ZIP variation. A complete area-by-date grid retained zero-event combinations. Supplement~\ref{supp:simulation} provides generating equations and the population-calibration calculation.
+
+Simulated counts were fitted with cluster, year, and weekday effects and a second-order random-walk seasonal term, using population exposure. Negative-binomial cluster IRRs were compared with injected reference-relative multipliers using Spearman correlation and an identity-line plot. This single simulation assessed recovery of imposed cluster rate differences, not heat slopes or excess-rate contrasts. It did not provide repeated-simulation bias or interval-coverage estimates.
+
+\subsection{Mapping and uncertainty}
+Cluster assignments were joined to ZCTA polygons and clipped to the county boundary for visualization. A separate choropleth assigned one exceedance probability to each cluster and displayed dissolved cluster boundaries. The mapping script used manually supplied probabilities, which require reconciliation with final posterior summaries before publication.
+
+All inferential summaries were conditional on the geographic sample, ACS point estimates, selected partition, reconstructed counts, and supplied exposure measurements. Upstream uncertainty was not propagated. Source-level reproducibility issues and study details requiring confirmation are retained in Appendix~\ref{sec:limitations}; no numerical findings are asserted in this manuscript draft.
+
+\clearpage
+
+\appendix
+\section{Supplementary Materials}
+\label{sec:supplement}
+\numberwithin{equation}{section}
+\renewcommand{\thetable}{S\arabic{table}}
+\setcounter{table}{0}
+
+\subsection{Source-defined ACS indicators}
+\label{supp:indicators}
+Table~\ref{tab:indicators} specifies the counts and denominators underlying the twenty covariates introduced in the Methods. Definitions follow the selected ACS cells; broader variable labels should not replace those definitions. The table does not introduce additional predictors.
+
+\begin{longtable}{@{}p{0.30\textwidth}p{0.65\textwidth}@{}}
+\caption{Source-defined ACS covariates.}\label{tab:indicators}\\
+\toprule
+Variables & Construction and interpretation in the script \\
+\midrule
+\endhead
+\code{pct_white}, \code{pct_black}, \code{pct_asian}, \code{pct_hispanic} & Four B03002 counts divided by its total: non-Hispanic White, Black, Asian, and Hispanic shares. They do not exhaust all race/ethnicity categories.\\
+\code{poverty_rate} & B17001 poverty count divided by the corresponding poverty-universe total.\\
+\code{median_income} & B19013 median household income estimate.\\
+\code{unemployment_rate} & B23025 unemployment count divided by the selected labor-force count.\\
+\code{education_low} & Sum of B15003 cells 002--016 divided by B15003 total. The label is ``low education''; the selected cells define the measure.\\
+\code{pct_age17}, \code{pct_age65} & Sums of selected male and female B01001 age cells divided by total population in that table, representing ages 17 and younger and ages 65 and older.\\
+\code{uninsured_rate} & Four selected B27010 uninsured cells divided by its total.\\
+\code{language_isolation} & Twenty-four selected B16004 English-proficiency cells divided by its total. This is a person-based proxy from those cells, not a separately measured household isolation indicator.\\
+\code{disability_rate} & Twelve selected B18101 disability cells divided by its total.\\
+\code{elderly_alone_rate} & B09021 cell 023 divided by cell 022.\\
+\code{no_phone_rate} & Selected owner and renter no-phone counts from B25043 divided by its total.\\
+\code{renter_burden_rate} & Five selected B25106 burden counts divided by its renter-occupied count.\\
+\code{housing_overcrowding} & Only B25014 cells 007 and 013, divided by B25014 total. The actual threshold represented by these cells should be retained when defining this proxy; the broad variable name alone does not define it.\\
+\code{alt_housing_rate} & Mobile-home and boat/RV/van counts from B25024 divided by total housing units.\\
+\code{old_housing_rate} & Selected B25034 construction-vintage counts for 1970--79 and earlier, divided by total units.\\
+\code{outdoor_worker_rate} & C24050 agriculture/forestry and construction-industry counts divided by its total. Industry membership is used as a proxy for outdoor exposure.\\
+\bottomrule
+\end{longtable}
+
+The crowding measure uses only B25014 cells 007 and 013. The outdoor-work measure uses industry counts rather than directly measured outdoor working time. These distinctions affect construct interpretation even when the ratios are calculated correctly. Margins of error are not carried into these ratios. The clustering script converts numerical NaN values to missing values but does not apply a comprehensive complete-and-finite row filter. Its end-of-script missingness summaries are diagnostics, not an upstream exclusion rule. The ED-ready export retains original-scale covariates, whereas a separate profile object retains quartile categories.
+
+\subsection{Partition comparison and labeling rules}
+\label{supp:partition}
+\paragraph{Categorical profile model.}
+Let \(B_{ij}\in\{1,2,3,4\}\) be the binned covariate and \(K_i\) the latent cluster assignment. The categorical mixture underlying the explanatory profile representation is
+\begin{align}
+ p(B_i=b_i\mid K_i=k,\phi)&=\prod_{j=1}^{20}\phi_{kj,b_{ij}},\\
+ p(B\mid\pi,\phi)&=\prod_i\left\{\sum_k\pi_k\prod_j\phi_{kj,b_{ij}}\right\},
+\end{align}
+with \(\sum_q\phi_{kjq}=1\) and \(\sum_k\pi_k=1\). For fixed parameters,
+\begin{equation}
+ \Prob(K_i=k\mid B_i,\pi,\phi)=
+ \frac{\pi_k\prod_j\phi_{kj,b_{ij}}}{\sum_\ell\pi_\ell\prod_j\phi_{\ell j,b_{ij}}}.
+\end{equation}
+The product represents conditional independence of covariates within a component; dependence can arise marginally through mixing. This is a schematic likelihood, not an independently verified specification of package priors or a fixed number of components. Quartile categories enter as categorical probabilities, without an explicit ordinal constraint.
+
+\paragraph{Posterior dissimilarity.}
+For retained partition draws, its conceptual estimate is
+\begin{equation}
+ D_{ij}^{(r)}\approx1-\frac{1}{S_r}\sum_{s=1}^{S_r}
+ \mathbf 1\{K_i^{(r,s)}=K_j^{(r,s)}\}.
+\end{equation}
+Pairwise membership comparisons are invariant to permutations of cluster labels. They summarize assignment uncertainty, rather than Euclidean distance between covariates. The ACS script appends one run using seed \(100+r\) for run index \(r\). Agreement across runs does not substitute for trace-based convergence diagnostics, which the script does not implement.
+
+Let \(D^{(r)}\) denote the posterior dissimilarity object from run \(r\), and \(v_r\) its flattened representation of length \(L\). The precise run-selection criterion is
+\begin{equation}
+ d(r,u)=\frac{1}{L}\sum_{\ell=1}^{L}|v_{r\ell}-v_{u\ell}|,
+ \qquad r^*=\arg\min_r\frac{1}{R}\sum_{u=1}^{R}d(r,u).
+\end{equation}
+The argmin denotes selection from the completed runs after their scores have been calculated; no run is refitted or altered at this step. The self-distance is zero and is included in each average, which does not change which run has the smallest score. If scores tie, the code selects the first tied run. Selection is meaningful only when all objects describe the same ordered areas and preprocessing. Correlation between \(v_r\) and \(v_u\) is an additional diagnostic, not the selection objective. The selected dissimilarity object is passed to \code{calcOptimalClustering}; the code does not explicitly set its optimization criterion or the final cluster count.
+
+For each covariate with \(n=4a+r\) nonmissing values, \(0\le r<4\), equal-frequency binning produces \(r\) groups of size \(a+1\) and \(4-r\) of size \(a\), assigning larger groups first. Ties can therefore be split. Existing runs must not be combined across different samples or bin definitions.
+
+Cluster labels use raw-variable medians. The older-share threshold is checked before the younger-share threshold, so ``Older'' takes precedence when both meet or exceed their respective upper quartiles. For race/ethnicity labels, let \(p_{(1)}\ge p_{(2)}\) be the two largest of the four median shares. The ordered rules are:
+\begin{enumerate}
+\item If exactly two shares are positive and \(p_{(1)}-p_{(2)}<0.15\), assign their combined label.
+\item If \(p_{(1)}<0.40\) and at least three shares are at least 0.25, assign mixed composition.
+\item If both leading shares are at least 0.40, assign their combined label.
+\item If \(p_{(2)}\ge0.30\) and \(p_{(1)}-p_{(2)}<0.15\), assign their combined label.
+\item Otherwise assign the leading group if \(p_{(1)}\ge0.40\), and mixed composition otherwise.
+\end{enumerate}
+These are post-estimation descriptions; two distinct clusters may receive the same label.
+The age comparisons include equality at the upper-quartile threshold. Income labels compare cluster median income with the sample-wide 25th, 50th, and 75th percentiles using strict less-than comparisons; equality advances to the higher income category.
+
+\subsection{Indicator weights and missing-domain calculations}
+\label{supp:weights}
+Table~\ref{tab:domains} expands the domain definition in equation~\eqref{eq:methods-index}. The weights apply when all indicators and domains are observed.
+\begin{longtable}{@{}p{0.19\textwidth}p{0.56\textwidth}p{0.18\textwidth}@{}}
+\caption{Vulnerability domains and complete-data indicator weights.}\label{tab:domains}\\
+\toprule
+Domain & Indicators & Weight per indicator\\
+\midrule
+\endhead
+Socioeconomic & Poverty, reversed income rank, unemployment, low education, uninsured share & \(1/25\)\\
+Household & Older share, younger share, disability, limited English, no telephone, older adults living alone & \(1/30\)\\
+Minority composition & Rank of one minus non-Hispanic White share & \(1/5\)\\
+Housing & Crowding, renter burden, alternative housing, older housing & \(1/20\)\\
+Occupational & Outdoor-work proxy & \(1/5\)\\
+\bottomrule
+\end{longtable}
+For nonmissing sample size \(n_j>1\), indicator percent ranks are
+\begin{equation}
+ r_{ij}=\frac{\operatorname{rank}_{\min}(x_{ij})-1}{n_j-1}.
+\end{equation}
+Income uses \(1-r_{ij}\); tied values share the lower rank. If \(\mathcal J_{id}\) is the observed indicator set in domain \(d\) and \(\mathcal D_i\) is the defined-domain set, the missing-data rule is
+\begin{equation}
+ D_{id}=\frac{\sum_{j\in\mathcal J_{id}}r_{ij}}{|\mathcal J_{id}|},
+ \qquad V_i=\frac{\sum_{d\in\mathcal D_i}D_{id}}{|\mathcal D_i|}.
+\end{equation}
+An empty indicator set leaves a domain undefined. Omitting it changes the weight of the remaining domains; this is not neutral-rank imputation. Scores for different missingness patterns may therefore have different effective compositions.
+
+\subsection{Integer-allocation algorithm and feasibility}
+\label{supp:allocation}
+Initial daily suppression draws use seed 1. Every leading-less-than daily entry receives the same 1--11 working range, regardless of the threshold written in that entry; zero is excluded. The routine does not fill an otherwise absent daily calendar row with zero, so missing rows and zero counts must remain distinct.
+For one ZIP--month, let \(y_d\) be the initially reconstructed count on row \(d\), \(b_d\) indicate original suppression, and \(B=\sum_db_d\). With \(m\) daily rows, set
+\begin{equation}
+ w_d=\begin{cases}y_d/\sum_jy_j,&\sum_jy_j>0,\\1/m,&\text{otherwise.}\end{cases}
+\end{equation}
+For target \(T^\star\), define \(P=\max(T^\star-B,0)\), \(a_d=Pw_d\), and \(q=P-\sum_d\lfloor a_d\rfloor\). If \(e_d\) indicates one of the \(q\) largest fractional remainders, the implemented allocation is
+\begin{equation}
+ \widetilde y_d=b_d+\lfloor a_d\rfloor+e_d.
+\end{equation}
+Ties are broken by row order. For valid weights summing to one, integer targets, and \(T^\star\ge B\), conservation of the pool gives
+\begin{equation}
+ \sum_d\widetilde y_d
+ =B+\sum_d\lfloor a_d\rfloor+q=B+P=T^\star.
+\end{equation}
+The target is the rounded exact monthly value, or \(U-1\) when a suppressed monthly total must be reduced below \(U\). If the baseline already exceeds the target, truncating \(P\) at zero cannot satisfy the monthly constraint. When an initially zero month is suppressed, one row is randomly assigned a visit.
+If a suppressed monthly total is already positive and below its upper bound, the initial daily values are retained, with a minimum of one on originally suppressed rows. If no usable monthly constraint is available, the initial daily values are retained. The allocation identities above assume complete, valid daily values and one consistent monthly target within the group.
+
+This identity guarantees a total only under the stated feasibility conditions. It neither preserves exact daily observations nor bounds final daily counts above by 11. Initial random draws have mean 6 and variance 10, but reconciliation couples rows through a shared total. The output is not a sample from independent uniform daily distributions conditional on the monthly total. Monthly-total checks and imputed-count distributions are printed, but all infeasible constraints do not trigger an automatic stop. Heat-decile summaries are diagnostic and do not influence imputation.
+
+\subsection{Seasonal identification and posterior transformations}
+\label{supp:posterior}
+\paragraph{Likelihood and posterior factorization.}
+The Poisson mass function and log-likelihood contribution, with \(\mu_{it}=N_{it}e^{\eta_{it}}\), are
+\begin{align}
+ p(y_{it}\mid\mu_{it})&=\frac{\mu_{it}^{y_{it}}e^{-\mu_{it}}}{y_{it}!},\\
+ \ell_{it}&=y_{it}(\log N_{it}+\eta_{it})-N_{it}e^{\eta_{it}}-\log(y_{it}!).
+\end{align}
+The mean--size negative-binomial mass function is
+\begin{equation}
+ p(y\mid\mu,\kappa)=\frac{\Gamma(y+\kappa)}{\Gamma(\kappa)y!}
+ \left(\frac{\kappa}{\kappa+\mu}\right)^\kappa
+ \left(\frac{\mu}{\kappa+\mu}\right)^y.
+\end{equation}
+As \(\kappa\) increases, its extra variance decreases toward the Poisson limit. Letting \(\xi\) collect regression and seasonal effects and \(\psi\) collect hyperparameters,
+\begin{equation}
+ p(\xi,\psi\mid Y)\propto
+ \left\{\prod_{it}p(Y_{it}\mid\xi,\psi)\right\}p(\xi\mid\psi)p(\psi).
+\end{equation}
+The product assumes conditional independence given these terms. Integrating over common seasonal effects induces dependence, but negative-binomial dispersion alone does not specify persistent within-ZIP correlation. Unspecified priors remain package defaults.
+
+\paragraph{Within-area centering and original-unit interpretation.}
+Equation~\eqref{eq:methods-heat} implies
+\begin{equation}
+ \sum_{t\in\mathcal T_i}A_{it}=0,\qquad
+ \theta C_i+\beta_kA_{it}=\beta_kZ_{it}+(\theta-\beta_k)C_i.
+\end{equation}
+Holding \(C_i\) fixed, an increase of \(h\) original heat-index units has rate ratio \(\exp(\beta_kh/s_H)\). This separates the within-location association from the between-location mean-exposure association.
+
+\paragraph{Seasonal penalty.}
+For the day-of-year effect in equation~\eqref{eq:methods-model}, let \(D_2\) take second differences. Before scaling and identification conventions, its penalty has the form
+\begin{equation}
+ p(f\mid\tau)\propto\exp\{-\tfrac{\tau}{2}\|D_2f\|^2\},
+ \qquad (D_2f)_d=f_d-2f_{d-1}+f_{d-2}.
+\end{equation}
+The operator leaves constant and linear directions unpenalized. Constraints and the other design terms determine identification; exact treatment and priors are delegated to INLA. Month indicators and a seasonal smooth span overlapping temporal structure, so they should not be interpreted as independently identified causal seasonal mechanisms.
+
+For a nonreference cluster, covariance enters its acute-slope uncertainty through
+\begin{equation}
+ \Var(\beta+\delta_k\mid Y)=\Var(\beta\mid Y)+\Var(\delta_k\mid Y)
+ +2\operatorname{Cov}(\beta,\delta_k\mid Y).
+\end{equation}
+INLA linear combinations retain this term. Separately combining marginal standard deviations would not generally reproduce the same uncertainty.
+
+The reported transformation \(\exp\{\E(\gamma_k\mid Y)\}\) is not generally \(\E\{\exp(\gamma_k)\mid Y\}\). Likewise, the plug-in Poisson zero diagnostic \(\exp(-\widehat\mu_{it})\) differs from the fully integrated predictive probability \(\E\{\exp(-\mu_{it})\mid Y\}\). The source's zero diagnostics multiply stored fitted means by population; their rate-versus-count convention requires confirmation for the fitted INLA version.
+The exact plug-in zero summaries are
+\begin{equation}
+ \widehat p_{0,P}=\frac1n\sum_{it}e^{-\widehat\mu_{it}},\qquad
+ \widehat p_{0,NB}=\frac1n\sum_{it}
+ \left(\frac{\widehat\kappa}{\widehat\kappa+\widehat\mu_{it}}\right)^{\widehat\kappa}.
+\end{equation}
+For a coefficient marginal with cumulative distribution \(F_k\), the reported exceedance probability is \(1-F_k(0)\). The reference-cluster IRR and interval endpoints are fixed at one by definition, not by certainty about its absolute rate.
+
+\subsection{Derivation and numerical evaluation of the excess-rate target}
+\label{supp:contrast}
+Equation~\eqref{eq:methods-ar} follows from the predictor transformation
+\begin{equation}
+ \eta_{it}^{\mathrm{cf},(s)}=\eta_{it}^{(s)}
+ -\beta_{k(i)}^{(s)}(Z_{it}-\bar C_{k(i)}).
+\end{equation}
+Substituting \(A_{it}=Z_{it}-C_i\) into the heat term shows that the counterfactual acute component is \(\bar C_k-C_i\), while \(\theta C_i\) remains fixed. Factoring the difference of the two exponentiated predictors yields equation~\eqref{eq:methods-ar}. The bracket is evaluated as \code{-expm1(-beta * heat_delta)} to retain numerical precision near zero.
+
+The posterior helper samples row-specific predictors and the required slope coefficients jointly. Rows must retain the ordering used for fitting: a row-count check cannot detect a permutation. Sampling uses base seed 20260910 and one INLA sampling thread; a batch beginning at draw \(b\) uses seed \(20260910+b-1\). For approximately independent draws, the numerical standard error of a sign-probability estimate is \(\sqrt{\widehat p(1-\widehat p)/4000}\), at most about 0.0079. This is Monte Carlo error, separate from inferential uncertainty.
+The estimator itself is
+\begin{equation}
+ \widehat{\Prob}(\bar R_k>0\mid Y)=\frac1S\sum_{s=1}^{S}
+ \mathbf 1\{\bar R_k^{(s)}>0\},\qquad S=4000.
+\end{equation}
+The helper retains the cluster-by-draw matrix, summary quantiles, number of positive draws, settings, and INLA version. It checks finite heat values and contrasts, cluster membership, required coefficient names, and matching row counts. Equal-row averaging gives greater weight to ZIPs with more observed days; it equals equal-ZIP averaging only for equally long panels.
+
+When each ZIP retains the same finite rows used to compute its chronic mean, the reference implies
+\begin{equation}
+ \frac{1}{n_k^*}\sum_{\mathcal I_k}\Delta_{it}
+ =\frac{1}{n_k^*}\sum_{\mathcal I_k}(Z_{it}-C_i)=0.
+\end{equation}
+This does not force the average contrast to vanish. Writing \(\lambda_{it}^{(s)}=\exp(\eta_{it}^{(s)})\) and using \(1-e^{-x}\approx x\),
+\begin{equation}
+ \bar R_k^{(s)}\approx10{,}000\beta_k^{(s)}
+ \operatorname{Cov}_{\mathcal I_k}(\lambda_{it}^{(s)},\Delta_{it}),
+\end{equation}
+where covariance uses denominator \(n_k^*\). Higher-order terms also contribute. This establishes why rate--exposure dependence matters even when average heat departure is zero.
+
+For comparison, two different estimands would be
+\begin{equation}
+ R_k^{\mathrm{pop}}=\frac{\sum_{\mathcal I_k}N_{it}R_{it}}{\sum_{\mathcal I_k}N_{it}},
+ \qquad B_k^{\mathrm{cases}}=\sum_{\mathcal I_k}\frac{N_{it}}{10{,}000}R_{it}.
+\end{equation}
+They represent a population-weighted rate contrast and expected case total, respectively. Neither is the implemented equal-row target.
+
+\subsection{Simulation-generating equations and calibration}
+\label{supp:simulation}
+For day \(t\) in year \(y\), the baseline intensity is
+\begin{equation}
+ g_t=\exp\left\{-\frac{(d_t-200)^2}{2(50)^2}\right\},\qquad
+ q_t=\frac{r_y}{10{,}000}\frac{g_t}{\sum_{u\in\mathcal T_y}g_u},
+\end{equation}
+where \(\mathcal T_y\) contains May--October days and \(r_{2017}=19.6\), \(r_{2018}=14.9\). Thus \(\sum_{t\in\mathcal T_y}q_t=r_y/10{,}000\), concentrating the input annual total within the simulated window.
+
+The persistent multipliers are
+\begin{align}
+ m_k&=\exp\left\{0.20\frac{\bar V_k-\overline{\bar V}}{s_{\bar V}}\right\},\\
+ \widetilde u_i&=\max(\epsilon_i,0.05),\quad \epsilon_i\sim N(1,0.3^2),
+ \qquad u_i=\widetilde u_i/\operatorname{mean}_j\widetilde u_j.
+\end{align}
+Cluster standardization and ZIP-noise normalization are unweighted. Using seed 1, counts are generated by
+\begin{equation}
+ G_{it}\sim\mathrm{Gamma}(0.5,0.5),\qquad
+ Y_{it}\mid G_{it},u\sim\mathrm{Poisson}(N_im_{k(i)}u_iq_tG_{it}),
+\end{equation}
+with shape--rate gamma notation. For \(\mu_{it}=N_im_{k(i)}u_iq_t\), total variance gives
+\begin{align}
+ \Var(Y_{it}\mid u)
+ &=\E\{\Var(Y_{it}\mid G_{it},u)\mid u\}
+ +\Var\{\E(Y_{it}\mid G_{it},u)\mid u\}\\
+ &=\mu_{it}+2\mu_{it}^2.
+\end{align}
+Integrating over persistent ZIP noise adds dependence across days within a ZIP beyond the independent daily gamma variation.
+
+Conditional on realized persistent multipliers, the expected population-level annual rate is
+\begin{equation}
+ \frac{10{,}000\sum_i\sum_{t\in\mathcal T_y}\E(Y_{it}\mid u)}{\sum_iN_i}
+ =r_y\frac{\sum_iN_im_{k(i)}u_i}{\sum_iN_i}.
+\end{equation}
+The final factor need not be one. Centering cluster log multipliers fixes their geometric mean, not their population-weighted arithmetic mean.
+
+The nominal cluster recovery target is \(m_k/m_{k_0}\). In an idealized common-calendar comparison, realized cluster rate ratios additionally contain
+\begin{equation}
+ \frac{\bar u_{k,N}}{\bar u_{k_0,N}},\qquad
+ \bar u_{k,N}=\frac{\sum_{i:k(i)=k}N_iu_i}{\sum_{i:k(i)=k}N_i}.
+\end{equation}
+This explains possible departures from nominal truth in a single finite realization. Spearman correlation measures ordering and can remain perfect despite distorted effect magnitudes.
+
+At the event-expansion stage, diagnosis-code groups receive probabilities 0.80 for dehydration, 0.13 for kidney failure, and 0.07 for heat illness/stroke, divided evenly among the listed codes within each group. All generated visits enter the final count, irrespective of code. This operation does not supply an observed-data diagnosis definition.
+
+\paragraph{Recovery-model specification.}
+Both simulated-data likelihoods use
+\begin{equation}
+ \log\mu_{it}=\log N_i+\alpha+\gamma_{k(i)}
+ +a_{\operatorname{year}(t)}+w_{\operatorname{weekday}(t)}+f_{\operatorname{doy}(t)}.
+\end{equation}
+Unlike equation~\eqref{eq:methods-model}, this contains a year effect and no measured heat terms or heat-by-cluster interactions. For estimated and assigned cluster IRRs \(\widehat r_k\) and \(r_k^\star\), the comparison statistic is
+\begin{equation}
+ \rho_S=\operatorname{Cor}\{\operatorname{rank}(\widehat r_k),
+ \operatorname{rank}(r_k^\star)\}.
+\end{equation}
+Coefficient summaries also express percent changes as \(100(\mathrm{IRR}-1)\). A seasonal-effect table is constructed in memory, separately from the cluster recovery table.
+
+\subsection{Implementation provenance and outstanding reporting details}
+\label{sec:limitations}
+This author-facing supplement records reproducibility details that cannot be resolved from the source-only review. It contains no empirical results. Before submission, confirm observational dates, D2 coding, heat-index units and provenance, denominators, ethics or data-use determinations, analytic sample sizes, missingness, priors, software versions, and convergence diagnostics; add verified methodological and data-source references.
+
+\begin{longtable}{@{}p{0.23\textwidth}p{0.71\textwidth}@{}}
+\caption{Implementation dependencies requiring reconciliation.}\label{tab:dependencies}\\
+\toprule
+Component & Specific dependency\\
+\midrule
+\endhead
+Clustering & A fresh configuration adds one run, but the pairwise-comparison loop does not correctly handle a single run. Existing runs require matching area order, variables, and binning.\\
+Data handoff & Clustering and suppression write to a configured \code{MIN} folder; the heat model reads a different \code{HEAT_by_cluster} folder. Their equivalence is not established by the scripts.\\
+Monthly keys & Suppression joins and groups use ZIP and month without year. Input uniqueness and feasible totals must be checked before reconciliation.\\
+Simulation inputs & Generation and recovery use different statewide/county cluster exports. Numeric cluster IDs do not establish a common partition.\\
+Simulation schema & Helper paths and requested columns include names absent from the current reviewed layout or ACS export, including vehicle, owner-burden, and renter-rate fields.\\
+Rate diagnostic & One simulation cluster check divides by population summed across daily rows, then by two; its annual-rate label is mis-scaled. This is separate from the generating mechanism.\\
+Posterior alignment & The excess-rate helper verifies row counts but cannot detect reordered observations relative to fitted predictors.\\
+Map provenance & Fourteen probabilities are manually supplied in the mapping script. They must be reconciled with final posterior summaries and the exact partition.\\
+\bottomrule
+\end{longtable}
+
+The maps use categorical labels for profile membership, so distinct numbered clusters with identical labels can share a color. No spatial-contiguity constraint is imposed by the clustering. The exceedance map uses a gradient with limits 0.49--0.79 and does not read the model-generated posterior CSV.
+
+The source basis comprises the five root-level scripts for clustering, vulnerability scoring, suppression reconstruction, ED modeling, and posterior excess-rate calculation; the two simulation scripts; and the separate excess-rate map. No saved data, fitted results, or package internals were inspected for this document.
+\end{document}

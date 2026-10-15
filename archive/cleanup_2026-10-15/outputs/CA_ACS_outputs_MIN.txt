@@ -1,0 +1,113 @@
+=== Correlations ===
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.9104  0.9353  0.9602  0.9446  0.9617  0.9631 
+
+
+=== Absolute Differences ===
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+0.008147 0.009634 0.011122 0.012216 0.014250 0.017379 
+
+
+Selected run: 2 out of 3 
+
+
+=== ZCTA counts ===
+Total CA ZCTAs: 1763 
+ACS included: 1741  | excluded: 22 
+
+Missing ZCTA codes (in reference list, not in acs_clean):
+ [1] "90071" "90079" "90090" "90095" "90506" "90747" "90831" "91371" "91608" "92132" "92222" "92338" "92364" "93064"
+[15] "93410" "93633" "93943" "94850" "95250" "95364" "95915" "96155"
+
+
+=== Cluster label counts ===
+
+          Hispanic / Younger / Low income                   White / Mid-high income 
+                                      211                                       177 
+                      White / High income                 Hispanic / Mid-low income 
+                                      162                                       152 
+               White / Older / Low income           White / Older / Mid-high income 
+                                      145                                       130 
+           White / Older / Mid-low income                Hispanic / Mid-high income 
+                                      125                                       105 
+              Asian & White / High income                    White / Mid-low income 
+                                       87                                        73 
+   Mixed racial composition / High income         Hispanic & White / Mid-low income 
+                                       71                                        65 
+              White / Older / High income Mixed racial composition / Mid-low income 
+                                       53                                        52 
+                       White / Low income            Hispanic & White / High income 
+                                       49                                        42 
+            Hispanic & White / Low income 
+                                       42 
+
+
+=== PReMiuM Posterior Inclusion Probabilities (mean rho, averaged across runs) ===
+        pct_hispanic            pct_white        education_low        median_income   language_isolation 
+           0.9993802            0.9992298            0.9991841            0.9988680            0.9983705 
+           pct_asian         poverty_rate       uninsured_rate  outdoor_worker_rate            pct_age65 
+           0.9981581            0.9976920            0.9973359            0.9969784            0.9967901 
+           pct_black housing_overcrowding      disability_rate            pct_age17     alt_housing_rate 
+           0.9964302            0.9946550            0.9945941            0.9940550            0.9908321 
+  renter_burden_rate 
+           0.9799574 
+
+
+=== Pairwise Correlations (|r| > 0.6) ===
+                var1          var2 correlation
+1 language_isolation     pct_white  -0.7770133
+2       pct_hispanic     pct_white  -0.7724204
+3 language_isolation  pct_hispanic   0.7368238
+4      median_income  poverty_rate  -0.7289665
+5      education_low  pct_hispanic   0.7132357
+6 language_isolation education_low   0.6735632
+7          pct_age65     pct_white   0.6357789
+8      education_low     pct_white  -0.6027115
+
+
+=== Variance Inflation Factor Check ===
+                                 variable      VIF
+poverty_rate                 poverty_rate 4.955470
+housing_overcrowding housing_overcrowding 4.941551
+alt_housing_rate         alt_housing_rate 4.939795
+uninsured_rate             uninsured_rate 4.936014
+renter_burden_rate     renter_burden_rate 4.935092
+outdoor_worker_rate   outdoor_worker_rate 4.905212
+median_income               median_income 4.903599
+pct_age17                       pct_age17 4.888291
+pct_age65                       pct_age65 4.875826
+disability_rate           disability_rate 4.875670
+pct_black                       pct_black 4.870231
+education_low               education_low 4.799531
+pct_asian                       pct_asian 4.620202
+language_isolation     language_isolation 4.498806
+pct_hispanic                 pct_hispanic 4.418340
+pct_white                       pct_white 4.305373
+
+
+=== Missingness summary ===
+               variable n_missing pct_missing n_zero pct_zero
+1         median_income       114        6.55      0     0.00
+2    renter_burden_rate        68        3.91     74     4.42
+3   outdoor_worker_rate        20        1.15     92     5.35
+4  housing_overcrowding        19        1.09    753    43.73
+5      alt_housing_rate        14        0.80    225    13.03
+6          poverty_rate        13        0.75     76     4.40
+7        uninsured_rate         9        0.52    104     6.00
+8       disability_rate         9        0.52     34     1.96
+9         education_low         1        0.06    101     5.80
+10            pct_white         0        0.00     12     0.69
+11            pct_black         0        0.00    359    20.62
+12            pct_asian         0        0.00    284    16.31
+13         pct_hispanic         0        0.00     93     5.34
+14            pct_age17         0        0.00     91     5.23
+15            pct_age65         0        0.00     47     2.70
+16   language_isolation         0        0.00    280    16.08
+
+
+=== Completeness by ZCTA population ===
+# A tibble: 2 × 4
+  complete mean_pop median_pop     n
+  <lgl>       <dbl>      <dbl> <int>
+1 FALSE        526.        165   135
+2 TRUE       24327.      20429  1606

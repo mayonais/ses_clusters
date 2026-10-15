@@ -5,6 +5,10 @@ output_*
 *.RDataTmp*
 .Ruserdata
 .Rproj.user/
+/.publish-ses-clusters/
+*_model.rds
+*_fit.rds
+acs_prof_run*.txt
 .Rapp.history
 *.Rproj
 .Rcheck/
@@ -23,3 +27,5 @@ calenviroscreen/
 *.xlsx
 *.pdf
 .Rproj.user/
+
+/Los_Angeles_discrete_none_HEAT/

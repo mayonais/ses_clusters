@@ -55,7 +55,8 @@ map <- ggplot() +
     colors = c("#D9FFD9", "#5CDB5C", "#16A34A", "#006B2C", "#002E14"),
     limits = c(0.49, 0.79),
     breaks = c(0.50, 0.60, 0.70, 0.78),
-    labels = percent_format(accuracy = 1), name = "P(AR > 0)") + labs(
+    labels = percent_format(accuracy = 1), name = "P(AR > 0)"
+  ) + labs(
       title = paste("Proportion of Positive AR Across", file_name, "SES Clusters"),) +
   theme_minimal() + theme(aspect.ratio = 1.6,
     legend.position = "right",

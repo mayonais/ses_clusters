@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyr)
 
 area <- "Los Angeles"
-folder_name <- "Los_Angeles_normal_none"
+folder_name <- "Los_Angeles_discrete_none_MIN"
 
 clustered_zctas <- readRDS(paste0(
   "create_cluster outputs/", folder_name, "/", area, "_ACS_zcta_clustered_for_ED.rds"))
@@ -25,7 +25,7 @@ length(extra_in_daily) # extra zips in daily file not in clusters
 print(missing_from_daily)
 
 # =========================================================================
-# IMPUTE SUPPRESSED CELLS (<12), BOUNDED 1-11, DAILY D2 only
+# IMPUTE SUPPRESSED CELLS (<12), HEAT-SHAPED, BOUNDED 1-11, DAILY D2 only
 # =========================================================================
 
 set.seed(1)
@@ -53,7 +53,7 @@ monthly_ed <- monthly_ed %>% mutate(
 # final visits = baseline + rounded-down share + 1 only for the
 # n_extra days with the biggest leftover decimals (others get +0)
 allocate_remainder <- function(pool, share, baseline) {
-  raw_alloc <- pool * share # each day's decimal share of the pool
+  raw_alloc <- pool * share # each day's fair (decimal) share of the pool
   floor_alloc <- floor(raw_alloc) # round every day down first (under-allocates)
   remainder <- raw_alloc - floor_alloc 
   n_extra <- pool - sum(floor_alloc) # how many whole visits still need to be handed out
