@@ -40,3 +40,4 @@ calenviroscreen/
 /archive/*
 !/archive/analysis_functions.R
 !/archive/vulnerability_score.R
+!/archive/hri_ed.R

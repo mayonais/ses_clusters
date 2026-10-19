@@ -160,7 +160,7 @@ the current heat script alone was not treated as evidence that they were unused.
 
 Large fitted-model files, model caches, and raw PReMiuM run traces are kept locally and excluded from Git. A fresh clone refits models when needed. The obsolete top-level Los_Angeles_discrete_none_HEAT folder is excluded; the current heat workflow uses Los_Angeles_discrete_none_HEAT_by_cluster.
 
-The local archive contents (except `analysis_functions.R` and `vulnerability_score.R`) and older `create_cluster outputs/Los_Angeles_discrete_none/`
+The local archive contents (except `analysis_functions.R`, `vulnerability_score.R`, and `hri_ed.R`) and older `create_cluster outputs/Los_Angeles_discrete_none/`
 results are also excluded from GitHub because current R configurations do not
 use them. `analysis_updates/` remains on GitHub. Root-level methods documents
 are collected under `methods/`; generated map PDFs remain beside their figures.
