@@ -50,7 +50,7 @@ vars <- c("pct_white", "pct_black", "pct_asian", "pct_hispanic",
 cluster_profiles <- clustered_zctas %>% group_by(cluster) %>%
   summarise(across(all_of(vars), ~ median(.x, na.rm = TRUE)), n = n())
 
-source("analysis_functions.R")
+source("shared_functions.R")
 
 cluster_vuln <- clustered_zctas %>%
   compute_vulnerability_score() %>%

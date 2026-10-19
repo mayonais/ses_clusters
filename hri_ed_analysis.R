@@ -1,5 +1,5 @@
 # Full HRI ED analysis: Poisson/NB diagnostics, cluster comparisons and excess rates.
-# Shared calculations and compatible cached fits come from analysis_functions.R.
+# Shared calculations and compatible cached fits come from shared_functions.R.
 library(dplyr)
 library(tidyr)
 library(INLA)
@@ -24,7 +24,7 @@ force_refit <- FALSE
 ar_n_samples <- 4000L
 ar_batch_size <- 200L
 ar_seed <- 20260910L
-source(file.path(project_dir, "analysis_functions.R"), local = TRUE)
+source(file.path(project_dir, "shared_functions.R"), local = TRUE)
 source(file.path(project_dir, "cluster_ar.R"), local = TRUE)
 
 prepared <- load_heat_data(input_dir, file_name)

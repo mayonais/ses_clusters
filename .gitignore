@@ -32,3 +32,11 @@ calenviroscreen/
 /archive/
 /create_cluster outputs/Los_Angeles_discrete_none/
 !/methods/*.pdf
+
+# Keep exported map PDFs and the explicitly archived helper scripts.
+!/maps/**/*.pdf
+!/maps/*.pdf
+!/archive/
+/archive/*
+!/archive/analysis_functions.R
+!/archive/vulnerability_score.R

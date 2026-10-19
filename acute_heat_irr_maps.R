@@ -13,6 +13,7 @@ project_dir <- if (length(script_files)) {
 } else {
   getwd()
 }
+source(file.path(project_dir, "shared_functions.R"))
 input_dir <- file.path(project_dir, "Los_Angeles_discrete_none_HEAT_by_cluster")
 model_dirs <- c(Poisson = "acute_heat_poisson", "Negative binomial" = "acute_heat_nb")
 if (exists("irr_model_families", inherits = FALSE)) {
@@ -120,14 +121,15 @@ irr_maps <- lapply(names(map_inputs), function(model_name) {
 names(irr_maps) <- names(map_inputs)
 
 for (model_name in names(irr_maps)) {
-  map_dir <- file.path(input_dir, model_dirs[[model_name]])
+  map_dir <- file.path(project_dir, "maps", model_dirs[[model_name]])
+  dir.create(map_dir, recursive = TRUE, showWarnings = FALSE)
   
   for (extension in c("png", "pdf")) {
-    ggsave(file.path(map_dir, paste0("acute_heat_irr_map.", extension)),
-           irr_maps[[model_name]], width = 13, height = 11, dpi = 300, bg = "white")
+    save_project_map(file.path(map_dir, paste0("acute_heat_irr_map.", extension)),
+                     irr_maps[[model_name]])
   }
   
-  saveRDS(irr_maps[[model_name]], file.path(map_dir, "acute_heat_irr_map.rds"))
+  saveRDS(irr_maps[[model_name]], file.path(input_dir, model_dirs[[model_name]], "acute_heat_irr_map.rds"))
   print(irr_maps[[model_name]])
 }
 

@@ -10,7 +10,8 @@ clustered_zctas <- readRDS(paste0(
   "create_cluster outputs/", folder_name, "/", area, "_ACS_zcta_clustered_for_ED.rds"))
 
 daily_ed <- read_csv("datasets/Dummy_20241005_TotalERDaily.csv") %>%
-  mutate(zip = as.character(zip), date = as.Date(date, format = "%m/%d/%Y"),
+  mutate(Max_HI_Value = na_if(Max_HI_Value, 0),
+         zip = as.character(zip), date = as.Date(date, format = "%m/%d/%Y"),
          month = sprintf("%02d", month(date)), doy = yday(date)) %>%
   filter(zip %in% clustered_zctas$GEOID, Population > 0)
 
@@ -80,7 +81,8 @@ daily_ed <- daily_ed %>%
     pool_cap = if_else(exceeds_cap, pmax((mo_upper - 1) - sum(baseline), 0), NA_real_),
     D2_cap_case = allocate_remainder(pool_cap, share, baseline),
     
-    D2 = case_when(!is.na(mo_num) ~ D2_exact_case,
+    D2 = case_when(suppressWarnings(as.numeric(D2Dx1)) == 0 ~ 0,
+                   !is.na(mo_num) ~ D2_exact_case,
                    mo_suppressed & exceeds_cap ~ D2_cap_case,
                    mo_suppressed & !exceeds_cap & sum(D2) == 0 ~ 
                      if_else(row_number() == zero_month_pick, 1, D2), 
@@ -109,7 +111,7 @@ check_suppressed <- daily_ed %>% group_by(zip, month) %>%
              by = c("zip", "month")) %>%
   mutate(in_valid_range = daily_sum >= 1 & daily_sum < mo_upper)
 
-print(sum(check_suppressed$daily_sum < 1)) # should be 0
+print(sum(check_suppressed$daily_sum < 1)) # daily sums are 0 despite monthly <12; original daily zeros preserved
 print(sum(check_suppressed$daily_sum >= 12)) # should be 0
 
 # D2 imputed value distribution

@@ -61,7 +61,7 @@ for (yr in names(real_ed_rates)) {
 
 # ----- vulnerability profile by cluster ---------------------------------------
 
-source("analysis_functions.R")
+source("shared_functions.R")
 
 cluster_profiles <- clusters %>%
   group_by(cluster, cluster_label) %>%

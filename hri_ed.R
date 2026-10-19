@@ -32,7 +32,7 @@ daily_ed <- daily_ed %>%
 sum(is.na(daily_ed$cluster))
 
 # set lowest vulnerability score as reference cluster
-source("vulnerability_score.R")
+source("shared_functions.R")
 
 cluster_vuln <- clustered_zctas %>%
   compute_vulnerability_score() %>%

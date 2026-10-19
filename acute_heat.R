@@ -28,7 +28,7 @@ model_cache_dir <- file.path(input_dir, "model_cache")
 # Set TRUE only when you want to force a fresh fit, independently of plot changes.
 force_refit <- FALSE
 geometry_year <- 2020L
-source(file.path(project_dir, "analysis_functions.R"), local = TRUE)
+source(file.path(project_dir, "shared_functions.R"), local = TRUE)
 
 # ---- Shared analysis --------------------------------------------------------
 prepared <- load_heat_data(input_dir, study_name)
@@ -38,6 +38,8 @@ for (family in model_families) {
 model_label <- if (family == "poisson") "Poisson" else "Negative-binomial"
 output_dir <- file.path(input_dir, if (family == "poisson") "acute_heat_poisson" else "acute_heat_nb")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+map_output_dir <- file.path(project_dir, "maps", basename(output_dir))
+dir.create(map_output_dir, recursive = TRUE, showWarnings = FALSE)
 acute_fit <- fit_heat_model(prepared, model_cache_dir, family = family,
                             force_refit = force_refit)
 acute_summary <- summarise_heat_slopes(acute_fit, cluster_ids) %>%
@@ -110,20 +112,14 @@ unmapped <- setdiff(cluster_ids, unique(map_polygons$cluster))
 if (length(unmapped)) stop("No map geometry for cluster(s): ", paste(unmapped, collapse = ", "))
 cluster_boundaries <- map_polygons %>% filter(!is.na(P_beta_gt_0)) %>%
   group_by(cluster) %>% summarise(.groups = "drop")
-probability_map <- ggplot() +
-  geom_sf(data = map_geometry$boundary, fill = "grey92", colour = "grey60", linewidth = 0.2) +
-  geom_sf(data = filter(map_polygons, !is.na(P_beta_gt_0)), aes(fill = P_beta_gt_0),
-          colour = "white", linewidth = 0.10) +
-  geom_sf(data = cluster_boundaries, fill = NA, colour = "grey25", linewidth = 0.25) +
-  scale_fill_gradient2(low = "#2166AC", mid = "#F7F7F7", high = "#B2182B",
-                       midpoint = 0.5, limits = c(0, 1), breaks = seq(0, 1, 0.2),
-                       labels = function(x) sprintf("%.1f", x), na.value = "grey92",
-                       name = expression(P(beta[acute*","*k] > 0 ~ "|" ~ Y))) +
-  coord_sf(datum = NA, expand = FALSE) +
-  labs(title = paste(study_name, "acute-heat exceedance probabilities"),
-       subtitle = paste0(model_label, " posterior probability that the acute-heat coefficient exceeds 0")) +
-  theme_void(base_size = 11) + theme(legend.position = "right")
-save_plot(probability_map, "acute_heat_probability_map_zcta", width = 10, height = 8)
+probability_map <- draw_probability_map(
+  mainland_probability_geometry(map_geometry, clustered_zctas),
+  data.frame(cluster = acute_summary$cluster, probability = acute_summary$P_beta_gt_0),
+  expression(Pr(beta[acute*","*k] > 0 ~ "|" ~ Y)),
+  paste0(model_label, ": positive acute-heat coefficient\nCluster-specific acute-heat slope\nMainland Los Angeles, May-October 2018"))
+for (ext in c("png", "pdf")) {
+  save_project_map(file.path(map_output_dir, paste0("acute_heat_probability_map_zcta.", ext)), probability_map)
+}
 
 saveRDS(list(probability_map = probability_map, rr_plot = rr_plot),
          file.path(output_dir, "acute_heat_ggplots.rds"))

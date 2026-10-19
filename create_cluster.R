@@ -376,8 +376,8 @@ map <- ggplot(boundary) +
     axis.text = element_text(size = 6), axis.title = element_text(size = 7)) +
   guides(fill = guide_legend(ncol = 1))
 
-ggsave(filename = paste0("maps/", gsub(" ", "_", folder_name), "_clusters.png"),
-       plot = map, width = 8, height = 6, dpi = 300)
+source("shared_functions.R")
+save_project_map(paste0("maps/", gsub(" ", "_", folder_name), "_clusters.png"), map)
 
 rm(map)
 rm(clustered_zctas)
