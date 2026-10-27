@@ -30,7 +30,6 @@ calenviroscreen/
 
 /Los_Angeles_discrete_none_HEAT/
 /archive/
-/create_cluster outputs/Los_Angeles_discrete_none/
 !/methods/*.pdf
 
 # Keep exported map PDFs and the explicitly archived helper scripts.
@@ -41,3 +40,11 @@ calenviroscreen/
 !/archive/analysis_functions.R
 !/archive/vulnerability_score.R
 !/archive/hri_ed.R
+
+# Local diagnostics and execution logs are not publication outputs.
+/cluster_diagnostics.R
+/cluster_diagnostics/
+/model_diagnostics.R
+/model_diagnostics/
+*.log
+/Los_Angeles_discrete_none/Los Angeles_ACS_diss_mats_MIN.rds

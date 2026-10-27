@@ -1,166 +1,139 @@
-# CalHeatScore
+# Los Angeles heat and ED analysis
 
-Los Angeles ZCTA analyses of socioeconomic clusters, daily emergency department
-(ED) counts, and acute heat. The current heat workflow fits Poisson and
-negative-binomial models and produces cluster-specific maps and summaries.
+Run the R scripts from the project root. This project contains SES clustering,
+daily ED-count reconstruction, and Poisson heat-response models.
 
-## Run the acute-heat figures
+## Current inputs and results
 
-All geographic map exports use `shared_functions.R`: **10 x 8 inches**, with
-**3000 x 2400 pixel PNGs at 300 dpi** and matching PDF dimensions. Use
-`save_project_map(filename, plot)` for future maps. Keep geographic aspect
-ratios and align panels when comparing maps; do not stretch images.
+The active folder is:
 
-Open `calheatscore.Rproj` in RStudio. At the top of `acute_heat.R`, set:
-
-```r
-model_family <- "both"  # "poisson", "nbinomial", or "both"
+```text
+Los_Angeles_discrete_none/
+  Los Angeles_ACS_zcta_clustered_for_ED.rds
+  Los Angeles_daily_ed_no_heat.rds
+  Los Angeles_ACS_diss_mats.rds
+  Los Angeles_ACS_diss_mats_MIN.rds
+  create_map.R
+  linear_cluster/
+  climate_zone/
+  climate_zone_added/
+  model_cache/
 ```
 
-Then run the whole script from the project:
+The cluster assignments are the 20-covariate, 14-cluster solution used by all
+current heat models. The prepared daily ED input is unchanged from the file
+used for the saved fits.
+
+| Results folder | Model |
+| --- | --- |
+| `linear_cluster/` | Original linear acute-heat effects with SES-cluster heat slopes; no climate-zone heat curves |
+| `climate_zone/` | Shared RW2 curve and pooled climate-zone RW2 deviations; no explicit common or SES-cluster linear acute-heat slopes |
+| `climate_zone_added/` | Shared and climate-zone RW2 curves plus SES-cluster heat-slope interactions |
+| `model_cache/` | Compatible cached fits for these model variants |
+
+Each model folder contains its saved fits, coefficient summaries, WAIC/DIC TXT
+summary, AR summaries/posterior draws, and applicable acute-heat tables and plot
+objects. Existing model filenames retain the legacy
+`Los_Angeles_discrete_none_HEAT_by_cluster` prefix; this is a filename prefix,
+not the location of an active folder.
+
+The original model's saved Census geometry and forest plots are in
+`linear_cluster/acute_heat_poisson/` and `linear_cluster/acute_heat_nb/`.
+Other variants use that saved geometry.
+
+## Scripts
+
+- `hri_ed_analysis.R`: fitting and model summaries; currently selects the
+  RW2-only acute-heat `climate_zone` Poisson model. Negative-binomial refitting is disabled.
+- `acute_heat.R`: redraws acute-heat maps from the saved fits.
+- `acute_heat_irr_maps.R`: computes complete one-SD heat contrasts from INLA
+  linear-combination marginals and exports the matching IRR/probability maps.
+- `shared_functions.R`: data preparation, fitting, contrasts, and map helpers.
+- `cluster_ar.R`: signed cluster-average excess-rate inference.
+- `create_cluster.R`: upstream 20-covariate SES clustering; reads/writes the
+  canonical output folder. It retains 2,000 burn-in iterations and 10,000 sweeps.
+- `suppressed_data.R`: daily-count reconstruction, now using the canonical
+  cluster/input folder. Its allocation calculations are unchanged.
+- `cluster_diagnostics.R`: preserves the existing historical MIN-chain
+  diagnostics using the explicitly named `Los Angeles_ACS_diss_mats_MIN.rds`.
+  Those 14-covariate chains produced a 9-cluster solution and are different
+  from the 20-covariate, 14-cluster assignments used by the heat models.
+
+Redraw maps without starting clustering or refitting:
 
 ```r
 source("acute_heat.R")
+source("Los_Angeles_discrete_none/create_map.R")
 ```
 
-This regenerates the probability map, incidence rate ratio (IRR) map, and IRR
-forest plot for the selected models. Each figure is saved as PNG and PDF.
-Compatible fitted models are reused automatically; set `force_refit <- TRUE`
-in the script only when a fresh fit is wanted. Running the script overwrites
-the selected models' figure and summary files.
+Choose the desired `model_variant` in the map scripts. Both default to
+`climate_zone`; `model_family` defaults to Poisson.
+Fitting, count reconstruction, and clustering are separate actions; the map
+scripts do not automatically run those upstream steps.
 
-To redraw only the IRR maps for both models from existing summaries:
+The separate simulation workflow reads the canonical assignments and writes
+its own outputs into `CA_simulated_ed/results/`.
 
-```r
-source("acute_heat_irr_maps.R")
-```
+## Maps and interpretation
 
-### Required inputs and packages
+Map PNGs and PDFs remain under matching folders in `maps/`:
+`linear_cluster/`, `climate_zone/`, and `climate_zone_added/`.
+Geographic maps use a 10-by-8-inch canvas; PNGs are 300 dpi. Gray areas without model results have diagonal hatching. Additional IRR point-and-interval plots show climate-zone effects, and cluster-by-zone effects for `climate_zone_added`. AR point-and-interval plots have been removed; AR probability maps and saved posterior draws remain.
 
-The prepared inputs are in `Los_Angeles_discrete_none_HEAT_by_cluster/`:
+For climate-zone models, acute heat is each day's deviation from the ZIP's
+average, expressed in the county-wide heat SD. The averages and SD use retained
+May–October 2018 ZIP-day observations, without population weighting.
+Zero heat-index values are treated as unavailable; genuine zero ED counts are
+retained.
 
-- `Los Angeles_ACS_zcta_clustered_for_ED.rds`: cluster assignments and area characteristics.
-- `Los Angeles_daily_ed_no_heat.rds`: daily ED counts, population, dates, and heat measurements.
+- IRRs compare a ZIP's average heat with one SD above that average, including
+  both RW2 curve differences and, for `climate_zone_added`, the SES-cluster linear heat slope.
+  INLA linear-combination marginals provide medians and credible intervals.
+- The acute-heat probability map shows `Pr(IRR_1SD > 1 | Y)`, labeled 0%–100%.
+- AR compares observed heat with each SES cluster's month-specific 2018 mean heat, expressed on the ZIP-centered acute-heat scale.
+  It averages signed rate differences equally across ZIP-days within each SES
+  cluster. Its map shows the probability that the cluster-average excess rate
+  is positive, estimated from 2,000 joint posterior draws, with periodic
+  garbage collection.
 
-The acute-heat scripts require R packages `INLA`, `dplyr`, `ggplot2`, `lubridate`,
-`sf`, `tigris`, and `scales`. The scripts do not install packages. If saved
-geometry is unavailable, `tigris` downloads Census boundaries and internet access
-is needed. The saved geometry uses 2020 ZCTAs.
+Climate-zone RW2 deviations share a precision. Only sum-to-zero constraints are
+retained; `extraconstr` is removed and RW2 linear trends are included in the
+complete contrasts. ZIPs 90010, 90704, and 91046 have no zone assignment and use
+the shared curve without a zone deviation. Population exposure remains in the
+model.
 
-### Where results go
+Concise mathematics and methods are in
+`methods/climate_zone_addition/main.tex`.
+Other files in `methods/` are earlier methods/supplement drafts and may refer to
+older map locations or model versions.
 
-Within `Los_Angeles_discrete_none_HEAT_by_cluster/`:
+## Archive and saved clustering runs
 
-| Folder | Contents |
-| --- | --- |
-| `acute_heat_poisson/` | Poisson forest plots, summary tables, and map geometry |
-| `acute_heat_nb/` | Negative-binomial forest plots, summary tables, and map geometry |
-| `model_cache/` | Shared fitted models and compatibility signatures |
+The reorganization on 2026-10-27 moved unused results into
+`archive/output_reorganization_2026-10-27/`, including:
 
-Geographic maps are saved under `maps/acute_heat_poisson/` and `maps/acute_heat_nb/`
-(`acute_heat_probability_map_zcta.png` / `.pdf` and `acute_heat_irr_map.png` / `.pdf`).
-The AR map is saved as `maps/AR_gt_0_gradient.png` / `.pdf`.
+- the alternative `Los_Angeles_discrete_none_MIN` assignments and results;
+- older August heat results from the canonical folder;
+- superseded climate-model caches, unused unpooled NB outputs, and the replaced
+  IRR sampling cache;
+- intermediate diagnostic logs and the remaining former HEAT folder contents.
 
-Each model's results folder contains:
+No files were deleted. `move_manifest.csv` inside that archive records original
+and destination paths and SHA-256 hashes. The small MIN dissimilarity/run-metadata
+file is also retained in the active folder for the existing diagnostics.
 
-- `acute_heat_relative_risk.png` / `.pdf` (the IRR forest plot)
-- `acute_heat_cluster_summary.csv`
-- `acute_heat_zcta_probabilities.csv`
-- Saved plot objects and geometry in `.rds` files.
+Raw saved MIN MCMC traces remain unchanged in
+`archive/cleanup_2026-10-15/`. Those available traces describe 14 covariates;
+do not relabel them as the 20-covariate chains or silently combine the two.
+The canonical 20-covariate saved dissimilarity objects are retained separately.
 
-### Interpretation
+## Dependencies and Git
 
-Heat is standardized using the mean and SD across all available LA ZCTA-day
-heat observations, pooled across clusters without population weighting.
-Zero `Max_HI_Value` measurements are converted to `NA`. Days with missing heat
-are excluded before standardization and model fitting; zero ED counts are retained.
-Chronic heat is each area's mean standardized heat; acute heat is the daily
-departure from that mean. A one-unit acute increase uses the same pooled heat
-SD for every cluster, holding chronic heat fixed.
+Heat scripts use `INLA`, `dplyr`, `ggplot2`, `lubridate`, `sf`,
+`tigris`, and `scales`. Upstream clustering and diagnostics require their
+additional listed packages. Scripts do not install packages automatically.
 
-- The probability map shows `P(beta_acute,k > 0 | Y)` directly from the posterior
-  slope marginal, on a fixed 0–1 blue–white–red color scale centered at 0.5.
-- The IRR map shows the posterior median of `exp(beta_acute,k)` and equal-tail
-  95% credible intervals. IRR = 1 indicates no acute-heat association.
-- `P(beta_acute,k > 0 | Y)` equals `P(IRR_k > 1 | Y)`.
-
-All three probability maps show mainland Los Angeles with identical 10-by-8-inch
-layouts and aligned geographic panels. A common blue–white–red scale runs from 0 to 1, centered at 0.5.
-There are no footer notes. Run `create_map.R` from the HEAT input folder to redraw these maps from saved results without refitting.
-
-The Poisson `AR_gt_0_gradient` map shows `Pr{AR_c(theta) > 0 | Y}`: for each
-joint posterior draw, average the signed factual-minus-counterfactual rate
-contrasts over the cluster's observed ZIP-days, then count the proportion of
-these cluster averages above zero. The counterfactual sets standardized heat
-to the cluster mean, with chronic heat and other terms fixed. This uses equal
-ZIP-day weights. A value of 1 means all 4,000 sampled draws were positive.
-
-## Project files
-
-| File or folder | Role |
-| --- | --- |
-| `acute_heat.R` | Main entry point for current acute-heat figures |
-| `acute_heat_irr_maps.R` | IRR maps from saved model summaries; called by the main script |
-| `shared_functions.R` | Shared data preparation, model fitting/cache, and posterior summaries |
-| `hri_ed_analysis.R` | Broader Poisson/negative-binomial ED analysis and cluster summaries |
-| `cluster_ar.R` | Posterior excess-rate calculations used by `hri_ed_analysis.R` |
-| `create_cluster.R` | Upstream ACS profile clustering |
-| `suppressed_data.R` | Upstream reconstruction of suppressed daily ED counts |
-| `create_cluster outputs/` | Current `Los_Angeles_discrete_none_MIN` results on GitHub; older `none` results kept locally |
-| `datasets/` | Raw data used by upstream preprocessing |
-| `maps/` | Cluster maps, acute-heat probability and IRR maps, and the AR map |
-| `CA_simulated_ed/` | Separate simulation workflow; retained with its own README |
-| `documents/` | Reference documents |
-| `methods/acute_heat_supplement.tex` | Supplementary acute-heat math, methods, calculation code, and Poisson maps |
-| `methods/acute_heat_supplement.pdf` | Previously compiled supplement; may lag behind source edits |
-| `methods/methodology.tex` | Broader methods draft |
-| `analysis_updates/` | Earlier analysis reports and reproducible outputs retained on GitHub |
-| `archive/` | Earlier scripts (including the retired analysis and vulnerability helpers) and archived results |
-
-The upstream clustering and suppression scripts currently select
-`Los_Angeles_discrete_none_MIN`; the current heat scripts read prepared inputs
-from `Los_Angeles_discrete_none_HEAT_by_cluster`. They are not an automatic
-end-to-end pipeline. Check the configuration and deliberately prepare the
-appropriate heat inputs before replacing them. Upstream clustering also uses
-ACS/Census services and additional R packages listed in that script.
-
-Daily-count imputation and monthly reconciliation are implemented directly in `suppressed_data.R`.
-The original allocation workflow is retained, with original daily zeros preserved and zero
-heat-index values converted to `NA`. All-zero daily ZIP-months remain zero even when the
-monthly value is `<12`; the existing checks report these conflicts.
-
-Compile the supplement from `methods/`; it references both PNGs through
-`../maps/acute_heat_poisson/`. Keep this
-relative folder structure when compiling or sharing its source. The built-in
-single-file LaTeX preview has previously been unable to load these external
-images; a compiler with access to the project files is needed for the full PDF.
-
-## Archive and restore
-
-The cleanup on 2026-10-15 moved loose PReMiuM run traces, older statewide
-outputs/profile exports, an unreferenced daily-count file, the automatic
-`Rplots.pdf`, and alternative clustering results/maps into
-`archive/cleanup_2026-10-15/`. These were outside the current heat workflow and
-the selected upstream configuration. No files were deleted.
-
-`archive/cleanup_2026-10-15/move_manifest.csv` records each original path and its
-archived path, relative to the project root. Directory entries include all
-their contents. To restore an item, move it from `ArchivedPath` back to
-`OriginalPath`, creating its parent directory if needed and checking for an
-existing destination first. Archived PReMiuM traces may be needed to inspect
-old run objects. Older scripts can refer to their original paths and may need
-restoration before reuse. A future clustering run may create new traces in the
-project root.
-
-Raw data, references, simulation work, active heat results/caches, upstream
-`none`/`MIN` results, and RStudio/Git metadata were retained. Their absence from
-the current heat script alone was not treated as evidence that they were unused.
-
-## GitHub contents
-
-Large fitted-model files, model caches, and raw PReMiuM run traces are kept locally and excluded from Git. A fresh clone refits models when needed. The obsolete top-level Los_Angeles_discrete_none_HEAT folder is excluded; the current heat workflow uses Los_Angeles_discrete_none_HEAT_by_cluster.
-
-The local archive contents (except `analysis_functions.R`, `vulnerability_score.R`, and `hri_ed.R`) and older `create_cluster outputs/Los_Angeles_discrete_none/`
-results are also excluded from GitHub because current R configurations do not
-use them. `analysis_updates/` remains on GitHub. Root-level methods documents
-are collected under `methods/`; generated map PDFs remain beside their figures.
+Large fitted models, caches, raw MCMC traces, raw datasets, and local archive
+contents are excluded from Git. Active canonical clustering inputs and summary
+files are no longer excluded merely because of the canonical folder name.
+Fitted models must be regenerated locally; raw datasets and `datasets/cz_zip.csv` are local inputs. Diagnostic scripts, diagnostic outputs, logs, and caches are excluded from publication.

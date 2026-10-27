@@ -15,7 +15,7 @@ state <- "CA"
 county <- "Los Angeles"
 
 file_name <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none_MIN"
+folder_name <- "Los_Angeles_discrete_none"
 
 options(tigris_use_cache = TRUE)
 
@@ -227,7 +227,7 @@ pr_data <- acs_clean %>%
   as.data.frame()
 
 # LOAD EXISTING RUNS IF PRESENT
-acs_diss_path <- file.path("create_cluster outputs", folder_name, paste0(file_name, "_ACS_diss_mats.rds"))
+acs_diss_path <- file.path(folder_name, paste0(file_name, "_ACS_diss_mats.rds"))
 acs_diss_mats <- if (file.exists(acs_diss_path)) readRDS(acs_diss_path) else list()
 
 n_existing <- length(acs_diss_mats)
@@ -287,7 +287,7 @@ clusObj <- calcOptimalClustering(acs_diss_mats[[best_run]])
 pr_data$cluster <- clusObj$clustering
 
 saveRDS(pr_data, file = file.path(
-  "create_cluster outputs", folder_name, paste0(file_name, "_pr_data_with_clusters.rds")))
+  folder_name, paste0(file_name, "_pr_data_with_clusters.rds")))
 rm(clusObj)
 
 cluster_profiles <- acs_clean %>% st_drop_geometry() %>%
@@ -347,9 +347,9 @@ clustered_zctas <- acs_clean %>% st_drop_geometry() %>%
   dplyr::select(GEOID, cluster, cluster_label, everything())
 
 saveRDS(clustered_zctas, file = file.path(
-  "create_cluster outputs", folder_name, paste0(file_name, "_ACS_zcta_clustered_for_ED.rds")))
+  folder_name, paste0(file_name, "_ACS_zcta_clustered_for_ED.rds")))
 
-write.csv(clustered_zctas, file = file.path("create_cluster outputs", folder_name,
+write.csv(clustered_zctas, file = file.path(folder_name,
                                             paste0(file_name, "_ACS_zcta_clustered_for_ED.csv")))
 
 # ===========================================================================
@@ -397,12 +397,12 @@ missingness_summary <- lapply(vars, function(v) {
   bind_rows() %>% arrange(desc(pct_missing))
 
 saveRDS(best_run, file = file.path(
-  "create_cluster outputs", folder_name, paste0(file_name, "_ACS_best_run.rds")))
+  folder_name, paste0(file_name, "_ACS_best_run.rds")))
 rm(acs_diss_mats)
 
 # ------ TXT FILE ------------------------------------------------------
 
-sink(file.path("create_cluster outputs", folder_name, paste0(file_name, "_ACS_outputs.txt")))
+sink(file.path(folder_name, paste0(file_name, "_ACS_outputs.txt")))
 
 cat("=== Correlations ===\n")
 print(summary(cor_vals))

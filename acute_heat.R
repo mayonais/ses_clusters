@@ -1,7 +1,8 @@
 # Choose "poisson", "nbinomial", or "both"; then source this whole script.
-model_family <- "both"
-# RR_k = exp(beta_acute,k) per one global heat SD, holding chronic heat fixed.
-# P(beta_acute,k > 0 | Y) = P(RR_k > 1 | Y).
+model_family <- "poisson"
+model_variant <- "climate_zone"  # "climate_zone", "climate_zone_added", or "linear_cluster"
+# Linear maps use exp(beta_acute,k). Nonlinear maps use the complete heat
+# contrast (ZIP mean + one global heat SD versus ZIP mean), including both RW2s.
 library(dplyr)
 library(ggplot2)
 library(INLA)
@@ -19,11 +20,15 @@ project_dir <- if (length(script_files)) {
 
 # ---- Settings ---------------------------------------------------------------
 study_name <- "Los Angeles"
-input_dir <- file.path(project_dir, "Los_Angeles_discrete_none_HEAT_by_cluster")
+input_dir <- file.path(project_dir, "Los_Angeles_discrete_none")
+model_prefix <- "Los_Angeles_discrete_none_HEAT_by_cluster"
 model_families <- switch(model_family, both = c("poisson", "nbinomial"),
                          poisson = "poisson", nbinomial = "nbinomial",
                          stop('model_family must be "poisson", "nbinomial", or "both".'))
 model_cache_dir <- file.path(input_dir, "model_cache")
+results_root <- if (model_variant %in% c("climate_zone_added", "climate_zone")) {
+  file.path(input_dir, model_variant)
+} else file.path(input_dir, "linear_cluster")
 # FALSE reuses a compatible fit and refits automatically if its signature changes.
 # Set TRUE only when you want to force a fresh fit, independently of plot changes.
 force_refit <- FALSE
@@ -36,12 +41,28 @@ clustered_zctas <- prepared$clustered_zctas
 cluster_ids <- levels(prepared$daily_ed$cluster)
 for (family in model_families) {
 model_label <- if (family == "poisson") "Poisson" else "Negative-binomial"
-output_dir <- file.path(input_dir, if (family == "poisson") "acute_heat_poisson" else "acute_heat_nb")
+output_dir <- file.path(results_root, if (family == "poisson") "acute_heat_poisson" else "acute_heat_nb")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-map_output_dir <- file.path(project_dir, "maps", basename(output_dir))
+map_output_dir <- file.path(project_dir, "maps", model_variant, basename(output_dir))
 dir.create(map_output_dir, recursive = TRUE, showWarnings = FALSE)
-acute_fit <- fit_heat_model(prepared, model_cache_dir, family = family,
-                            force_refit = force_refit)
+if (model_variant %in% c("climate_zone_added", "climate_zone")) {
+  model_suffix <- if (family == "poisson") "poisson" else "nb"
+  model_file <- file.path(results_root, paste0(model_prefix,
+    "_suppressed_INLA_", model_suffix, "_model.rds"))
+  if (!file.exists(model_file)) stop("Run hri_ed_analysis.R first: missing ", model_file)
+  acute_fit <- readRDS(model_file)
+  stopifnot(!is.null(acute_fit$nonlinear_heat$shared_field),
+    isTRUE(acute_fit$nonlinear_heat$pooled),
+    nrow(acute_fit$summary.linear.predictor) == nrow(prepared$daily_ed))
+} else {
+  acute_fit <- fit_heat_model(prepared, model_cache_dir, family = family,
+                              force_refit = force_refit)
+}
+if (!"acute_heat" %in% acute_fit$names.fixed) {
+  stopifnot(model_variant %in% c("climate_zone_added", "climate_zone"))
+  message("No fixed heat slope: exporting RW2 IRRs and probabilities below.")
+  next
+}
 acute_summary <- summarise_heat_slopes(acute_fit, cluster_ids) %>%
   left_join(prepared$cluster_labels, by = "cluster") %>%
   arrange(as.numeric(cluster)) %>%
@@ -68,10 +89,11 @@ save_plot <- function(plot, name, width = 9, height = 7) {
   ggsave(file.path(output_dir, paste0(name, ".png")), plot, width = width, height = height, dpi = 300, bg = "white")
   ggsave(file.path(output_dir, paste0(name, ".pdf")), plot, width = width, height = height, bg = "white")
 }
-save_plot(rr_plot, "acute_heat_relative_risk")
+if (model_variant == "linear_cluster") save_plot(rr_plot, "acute_heat_relative_risk")
 
 # ---- Probability choropleth: same ZCTA vintage as the existing map ------------
-geometry_file <- file.path(output_dir, paste0("los_angeles_zcta_", geometry_year, ".rds"))
+geometry_file <- file.path(input_dir, "linear_cluster", basename(output_dir),
+                          paste0("los_angeles_zcta_", geometry_year, ".rds"))
 if (file.exists(geometry_file)) {
   map_geometry <- readRDS(geometry_file)
 } else {
@@ -112,22 +134,38 @@ unmapped <- setdiff(cluster_ids, unique(map_polygons$cluster))
 if (length(unmapped)) stop("No map geometry for cluster(s): ", paste(unmapped, collapse = ", "))
 cluster_boundaries <- map_polygons %>% filter(!is.na(P_beta_gt_0)) %>%
   group_by(cluster) %>% summarise(.groups = "drop")
+if (model_variant == "linear_cluster") {
 probability_map <- draw_probability_map(
   mainland_probability_geometry(map_geometry, clustered_zctas),
   data.frame(cluster = acute_summary$cluster, probability = acute_summary$P_beta_gt_0),
   expression(Pr(beta[acute*","*k] > 0 ~ "|" ~ Y)),
-  paste0(model_label, ": positive acute-heat coefficient\nCluster-specific acute-heat slope\nMainland Los Angeles, May-October 2018"))
+  if (model_variant %in% c("climate_zone_added", "climate_zone")) {
+    paste0(model_label, " + shared and pooled climate-zone RW2 (nonlinear addition)\n",
+      "Positive linear acute-heat component, adjusted for RW2 curves\n",
+      "Mainland Los Angeles, May-October 2018")
+  } else paste0(model_label, ": positive acute-heat coefficient\n",
+    "Cluster-specific acute-heat slope\nMainland Los Angeles, May-October 2018"))
 for (ext in c("png", "pdf")) {
   save_project_map(file.path(map_output_dir, paste0("acute_heat_probability_map_zcta.", ext)), probability_map)
 }
 
 saveRDS(list(probability_map = probability_map, rr_plot = rr_plot),
          file.path(output_dir, "acute_heat_ggplots.rds"))
-print(probability_map)
-print(rr_plot)
+if (interactive()) {
+  print(probability_map)
+  print(rr_plot)
+}
+} else {
+  # The IRR script below also draws the matching full-response probability map
+  # from the same INLA contrast marginals and aligns the two map panels.
+  saveRDS(list(rr_plot = rr_plot), file.path(output_dir, "acute_heat_ggplots.rds"))
+}
 message("Finished. Figures and summary saved in: ", output_dir)
 }
 # Generate IRR maps
+rm(acute_fit)
+gc(verbose = FALSE)
 irr_environment <- new.env(parent = environment())
 irr_environment$irr_model_families <- model_families
+irr_environment$model_variant <- model_variant
 source(file.path(project_dir, "acute_heat_irr_maps.R"), local = irr_environment)

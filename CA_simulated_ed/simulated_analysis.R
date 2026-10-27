@@ -8,10 +8,13 @@ state <- "CA"
 
 
 file_name <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none_HEAT_by_cluster"
+folder_name <- "Los_Angeles_discrete_none_HEAT_by_cluster"  # Legacy output filename prefix.
+input_dir <- file.path("Los_Angeles_discrete_none")
+output_dir <- file.path("CA_simulated_ed", "results")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 clustered_zctas <- readRDS(paste0(
-  folder_name, "/", file_name, "_ACS_zcta_clustered_for_ED.rds"))
+  input_dir, "/", file_name, "_ACS_zcta_clustered_for_ED.rds"))
 
 ed_data <- read.csv("CA_simulated_ed/daily_counts_2017_2018.csv",
                     colClasses = c(GEOID = "character"))
@@ -123,11 +126,11 @@ capture.output({
   poisson_p_table <- as.data.frame(poisson_inla$summary.fixed)
   poisson_p_table$term <- rownames(poisson_p_table)
   
-  saveRDS(poisson_p_table, paste0(folder_name, "/",
+  saveRDS(poisson_p_table, paste0(output_dir, "/",
                                   folder_name, "_simulated_INLA_poisson_coef_table.rds"))
-}, file = paste0(folder_name, "/",
+}, file = paste0(output_dir, "/",
                  folder_name, "_simulated_ED_INLA_poisson_summary.txt"))
-saveRDS(poisson_inla, paste0(folder_name, "/",
+saveRDS(poisson_inla, paste0(output_dir, "/",
                              folder_name, "_simulated_INLA_poisson_model.rds"))
 rm(poisson_inla, expected_counts)
 gc()
@@ -181,12 +184,12 @@ capture.output({
   nb_p_table <- as.data.frame(nb_inla$summary.fixed)
   nb_p_table$term <- rownames(nb_p_table)
   
-  saveRDS(nb_p_table, paste0(folder_name, "/",
+  saveRDS(nb_p_table, paste0(output_dir, "/",
                              folder_name, "_simulated_INLA_nb_coef_table.rds"))
   
-}, file = paste0(folder_name, "/",
+}, file = paste0(output_dir, "/",
                  folder_name, "_simulated_ED_INLA_nb_summary.txt"))
-saveRDS(nb_inla, paste0(folder_name, "/",
+saveRDS(nb_inla, paste0(output_dir, "/",
                         folder_name, "_simulated_INLA_nb_model.rds"))
 rm(nb_inla, expected_counts)
 gc()
@@ -196,7 +199,7 @@ gc()
 # extract INLA coefficients and calculate IRRs
 # ============================================================
 
-nb_inla <- readRDS(paste0(folder_name, "/",
+nb_inla <- readRDS(paste0(output_dir, "/",
                           folder_name, "_simulated_INLA_nb_model.rds"))
 
 p_table <- as.data.frame(nb_inla$summary.fixed)
@@ -286,7 +289,7 @@ print(coef_table, row.names = FALSE)
 
 write.csv(
   coef_table,
-  paste0(folder_name, "/", file_name, "_simulated_NB_incidence_rate_ratios.csv"),
+  paste0(output_dir, "/", file_name, "_simulated_NB_incidence_rate_ratios.csv"),
   row.names = FALSE
 )
 
@@ -337,7 +340,7 @@ irr_correlation <- cor(
 print(validation_table)
 print(paste("Spearman correlation:", round(irr_correlation, 3)))
 
-write.csv(validation, paste0(folder_name, "/",
+write.csv(validation, paste0(output_dir, "/",
                              file_name, "_simulated_NB_cluster_results.csv"),
           row.names = FALSE)
 

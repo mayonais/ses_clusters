@@ -4,10 +4,10 @@ library(dplyr)
 library(tidyr)
 
 area <- "Los Angeles"
-folder_name <- "Los_Angeles_discrete_none_MIN"
+folder_name <- "Los_Angeles_discrete_none"
 
 clustered_zctas <- readRDS(paste0(
-  "create_cluster outputs/", folder_name, "/", area, "_ACS_zcta_clustered_for_ED.rds"))
+  folder_name, "/", area, "_ACS_zcta_clustered_for_ED.rds"))
 
 daily_ed <- read_csv("datasets/Dummy_20241005_TotalERDaily.csv") %>%
   mutate(Max_HI_Value = na_if(Max_HI_Value, 0),
@@ -127,4 +127,4 @@ daily_ed %>% mutate(heat_decile = ntile(Max_HI_Value, 10)) %>%
   summarise(mean_HI = mean(Max_HI_Value), mean_D2 = mean(D2), n = n())
 
 saveRDS(daily_ed, paste0(
-  "create_cluster outputs/", folder_name, "/", area, "_daily_ed_no_heat.rds"))
+  folder_name, "/", area, "_daily_ed_no_heat.rds"))

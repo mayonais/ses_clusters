@@ -1,0 +1,89 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,microtype}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.3em}
+\setlength{\abovedisplayskip}{5pt}
+\setlength{\belowdisplayskip}{5pt}
+\pagestyle{empty}
+\begin{document}
+\begin{center}\large\bfseries Climate-Zone Heat Model: Methods and Mathematics\end{center}
+
+\textbf{Data and exposure.}
+Let $i$ index ZIP codes, $d$ days, $k(i)$ SES clusters, and $\mathrm{cz}[i]$ climate
+zones. Data are retained May--October 2018 ZIP-days. Define standardized heat
+$H_{id}=(\mathrm{HI}_{id}-\overline{\mathrm{HI}})/s_H$, where the county-wide
+mean and sample SD use all modeled ZIP-days without population weighting.
+Let $\bar H_i$ be ZIP $i$'s mean standardized heat and
+$x_{id}=H_{id}-\bar H_i$ its acute heat. Climate zones are joined from
+\path{datasets/cz_zip.csv} (zones 20, 22, 28, 29, and 30).
+
+\textbf{Poisson model (\texttt{climate\_zone}).}
+For ED counts $Y_{id}$ and population exposure $n_{id}$,
+\begin{align}
+ Y_{id}&\sim\operatorname{Poisson}(n_{id}\mu_{id}),\\
+ \log\mu_{id}&=\alpha+\gamma_{k(i)}+\beta_{\mathrm{chronic}}\bar H_i
+       +\beta_{m(d)}+\beta_{w(d)}\nonumber\\
+ &\quad+f_{\mathrm{doy}}(d)+f_{\mathrm{heat},\mathrm{cz}[i]}(H_{id}-\bar H_i),\qquad \gamma_{k_0}=0,\label{eq:model}\\
+ f_{\mathrm{heat},\mathrm{cz}[i]}(\cdot)&=f_{\mathrm{shared}}(\cdot)+f_{\mathrm{dev},\mathrm{cz}[i]}(\cdot).
+\end{align}
+Here $m(d)$ and $w(d)$ denote month and weekday; $f_{\mathrm{doy}}$ is the
+seasonal RW2 effect. There is no separate linear acute-heat term.
+ZIPs 90010, 90704, and 91046 have missing climate zones: their deviation
+is defined as zero, retaining the shared curve and other covariates.
+
+An additional model, \texttt{climate\_zone\_added}, retained both heat curves
+and added $\beta_{\mathrm{acute},k(i)}(H_{id}-\bar H_i)$ to \eqref{eq:model}, with
+$\beta_{\mathrm{acute},k}=\beta_{\mathrm{acute}}+\delta_k$ and $\delta_{k_0}=0$.
+
+\textbf{RW2 priors and pooling.}
+The heat curves use 50 equally spaced nodes, evaluated at the nearest node:
+\[
+ \boldsymbol f_{\mathrm{shared}}\mid\tau_s\sim\mathrm{RW2}_*(\tau_s),\qquad
+ \boldsymbol f_{\mathrm{dev},\mathrm{cz}}\mid\tau_d
+ \overset{\mathrm{ind}}{\sim}\mathrm{RW2}_*(\tau_d).
+\]
+The scaled RW2 prior penalizes second differences
+$\Delta^2v_j=v_j-2v_{j+1}+v_{j+2}$.
+All zone deviations share precision $\tau_d$, pooling their curvature toward
+zero; the shared curve has separate precision $\tau_s$.
+Each curve is sum-to-zero, without an extra zero-linear-trend constraint.
+Linear trends remain allowed and are included in all heat contrasts.
+INLA's default precision hyperpriors are retained.
+
+\textbf{One-SD IRR and acute-heat probability.}
+For \texttt{climate\_zone}, holding other covariates fixed, compare one county-wide SD above each ZIP's
+overall May--October mean with that mean:
+\[
+ L_i=f_{\mathrm{heat},\mathrm{cz}[i]}(1)-f_{\mathrm{heat},\mathrm{cz}[i]}(0),\qquad
+ \mathrm{IRR}_{1\mathrm{SD},i}=e^{L_i},\qquad
+ p_i=\Pr(L_i>0\mid Y).
+\]
+INLA linear-combination marginals provide $L_i$'s posterior distribution.
+Exponentiated median and 2.5th/97.5th percentiles give the IRR median and
+95\% credible interval; $p_i$ uses the same marginal without posterior draws.
+
+\textbf{Cluster-average excess ED rate (AR).}
+Let $\bar H_{km}$ be the mean standardized heat across retained ZIP-days in
+SES cluster $k$ and month $m$ of 2018, with equal ZIP-day weights.
+The reference changes heat only:
+\begin{align*}
+ x^{\mathrm{ref}}_{id}&=\bar H_{k(i),m(d)}-\bar H_i,\\
+ \mu^{\mathrm{ref}}_{id}&=\mu_{id}
+ \exp\{f_{\mathrm{heat},\mathrm{cz}[i]}(x^{\mathrm{ref}}_{id})-f_{\mathrm{heat},\mathrm{cz}[i]}(x_{id})\}.
+\end{align*}
+For the $N_k$ modeled ZIP-days in cluster $k$, denoted $\mathcal I_k$,
+\[
+ \mathrm{AR}_k(\theta)=\frac{10{,}000}{N_k}
+ \sum_{(i,d)\in\mathcal I_k}
+ [\mu_{id}(\theta)-\mu^{\mathrm{ref}}_{id}(\theta)].
+\]
+This signed rate difference is per 10,000 population per day.
+Its posterior mean, 95\% credible interval, and
+$\Pr\{\mathrm{AR}_k(\theta)>0\mid Y\}$ use 2,000 joint INLA posterior draws.
+Both probabilities are reported as percentages.
+\end{document}
