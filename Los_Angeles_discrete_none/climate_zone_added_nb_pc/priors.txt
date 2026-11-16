@@ -1,0 +1,13 @@
+PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL WITH PC HYPERPRIORS
+Original 40 fixed coefficients retained, including common acute heat and 13 SES interactions.
+Same original rows, population offset, 50-node heat grid, scaling, and RW2 sum-to-zero constraints.
+Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.
+Four precision priors: pc.prec, P(1/sqrt(tau) > 1) = 0.01.
+Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.
+Correlation support: (-0.25, 1); implemented as an internal-scale log-density table including its Jacobian.
+NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.
+Excess-rate reference: SES-cluster-month mean heat; equal ZIP-day weighting; 2000 posterior draws.
+Source model MD5: 40622567bb287d2720dbf8d650d7c443
+Original and restored fixed-design MD5: d0d5aa91afdc0ee434689b37d73d24a7
+INLA version: 26.6.7
+R version: R version 4.4.3 (2025-02-28 ucrt)

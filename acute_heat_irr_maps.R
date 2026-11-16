@@ -1,3 +1,230 @@
+# Saved baseline PC NB mode: Rscript acute_heat_irr_maps.R --nb-pc
+# Or set model_variant <- "nb_pc_prior" before sourcing this script.
+export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
+  results_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc", figure_names = NULL) {
+  .libPaths(c("C:/Users/yysma/AppData/Local/R/win-library/4.4", .libPaths()))
+  library(dplyr)
+  library(ggplot2)
+  library(sf)
+  library(ggrepel)
+  source("shared_functions.R")
+  reference_irr <- readRDS("Los_Angeles_discrete_none/climate_zone_added/acute_heat_poisson/acute_heat_irr_map.rds")
+  reference_probability <- readRDS("Los_Angeles_discrete_none/climate_zone_added/acute_heat_poisson/acute_heat_ggplots.rds")$probability_map
+  reference_ar <- readRDS("Los_Angeles_discrete_none/climate_zone_added/AR_gt_0_gradient.rds")
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  prepared <- load_heat_data("Los_Angeles_discrete_none")
+  results <- readRDS(file.path(results_dir, "summaries.rds"))
+  stopifnot("acute_heat" %in% results$sampling_info$names.fixed,
+    sum(grepl("cluster.*:acute_heat|acute_heat:cluster", results$sampling_info$names.fixed)) == 13L)
+  heat_sd_f <- prepared$heat_sd
+  heat_increment <- sprintf("1 SD = %.2f\u00b0F", heat_sd_f)
+  model_label <- "Negative binomial | preserved SES heat slopes | PC hyperpriors"
+  reference <- prepared$reference_cluster
+  assignments <- st_drop_geometry(prepared$clustered_zctas) %>%
+    transmute(GEOID = as.character(GEOID), cluster = as.character(cluster), cluster_label)
+  zones <- read.csv("datasets/cz_zip.csv", colClasses = "character")
+  zip_info <- prepared$daily_ed %>% distinct(zip, cluster) %>%
+    transmute(GEOID = as.character(zip), cluster = as.character(cluster)) %>%
+    left_join(zones %>% rename(GEOID = zip, climate_zone = cz), by = "GEOID")
+  key <- function(cluster, zone) paste(cluster, ifelse(is.na(zone), "missing", zone), sep = ":")
+  idx <- match(key(zip_info$cluster, zip_info$climate_zone),
+               key(results$heat$cluster, results$heat$climate_zone))
+  stopifnot(!anyNA(idx), !anyDuplicated(zip_info$GEOID))
+  zip_info <- bind_cols(zip_info,
+    results$heat[idx, c("IRR_median", "IRR_lower", "IRR_upper", "P_IRR_gt_1")]) %>%
+    mutate(heat_sd_f = heat_sd_f)
+  write.csv(zip_info, file.path(results_dir, "acute_heat_irr_1sd_by_zip.csv"), row.names = FALSE)
+  baseline <- results$clusters %>% mutate(cluster = as.character(cluster)) %>%
+    select(-family) %>% left_join(distinct(select(assignments, cluster, cluster_label)), by = "cluster")
+  write.csv(baseline, file.path(results_dir, "baseline_cluster_irrs.csv"), row.names = FALSE)
+  
+  geometry <- readRDS("Los_Angeles_discrete_none/los_angeles_zcta_2020.rds")
+  mainland <- mainland_probability_geometry(geometry, assignments)
+  boundary <- mainland$boundary
+  polygons <- mainland$polygons
+  stopifnot(setequal(assignments$GEOID, as.character(geometry$zctas$ZCTA5CE20)[
+    as.character(geometry$zctas$ZCTA5CE20) %in% assignments$GEOID]))
+  boundary_only <- setdiff(assignments$GEOID, polygons$GEOID)
+  no_area <- as.character(geometry$zctas$ZCTA5CE20[st_dimension(geometry$zctas) < 2L])
+  write.csv(data.frame(GEOID = boundary_only, reason = ifelse(boundary_only %in% no_area,
+    "Boundary-only county intersection", "Outside mainland display extent")),
+    file.path(results_dir, "not_area_filled_on_mainland_map.csv"), row.names = FALSE)
+  clusters <- polygons %>% group_by(cluster) %>% summarise(.groups = "drop")
+  # Label every disconnected polygon, so a cluster number can appear repeatedly.
+  label_parts <- suppressWarnings(st_cast(st_cast(
+    st_collection_extract(clusters, "POLYGON"), "MULTIPOLYGON"), "POLYGON"))
+  # Maximal-inscribed-circle centers keep labels away from region boundaries.
+  circles <- st_inscribed_circle(st_geometry(label_parts), nQuadSegs = 0)
+  centers <- lapply(circles, function(x) st_point(unname(x[1, ])))
+  radius <- vapply(circles, function(x) sqrt(sum((x[1, ] - x[2, ])^2)), numeric(1))
+  label_points <- st_sf(st_drop_geometry(label_parts), geometry = st_sfc(centers, crs = st_crs(label_parts)))
+  xy <- st_coordinates(label_points)
+  label_data <- st_drop_geometry(label_points) %>% mutate(x = xy[, 1], y = xy[, 2],
+    small_region = radius < 1500)
+  units_per_mm <- unname(diff(st_bbox(boundary)[c("xmin", "xmax")])) / (6.5 * 25.4)
+  label_data$label_size <- pmin(4.5, pmax(1.6,
+    2 * radius / units_per_mm / pmax(1, nchar(label_data$cluster) * 0.65)))
+  stopifnot(setequal(label_data$cluster, assignments$cluster), nrow(label_data) == nrow(label_parts))
+  write.csv(label_data[c("cluster", "x", "y")], file.path(results_dir, "cluster_region_label_positions.csv"), row.names = FALSE)
+  coverage <- st_drop_geometry(polygons) %>% distinct(GEOID, cluster)
+  write.csv(coverage, file.path(results_dir, "mapped_zip_cluster_ids.csv"), row.names = FALSE)
+  map_caption <- "Black outlines and repeated numbers: SES clusters. Gray hatching: no modeled area result."
+  # Use the original red palette above IRR 1 and the original probability palettes.
+  plots <- list()
+  export <- function(plot, name) plots[[name]] <<- plot
+  map_plot <- function(estimates, value, title, subtitle, scale, by = "cluster", caption = map_caption) {
+    map_data <- polygons %>% left_join(estimates, by = by)
+    stopifnot(!anyNA(map_data[[value]]))
+    if (identical(value, "IRR_median")) {
+      shown_range <- range(map_data[[value]])
+      stopifnot(scale$limits[1] <= shown_range[1], scale$limits[2] >= shown_range[2],
+        identical(scale$limits, c(1, 2)), identical(scale$breaks, seq(1, 2, by = 0.2)),
+        identical(toupper(unname(scale$map(scale$limits))), c("#FFFFFF", "#B2182B")),
+        all(grDevices::col2rgb(scale$map(1)) >= 250))
+    } else {
+      reference_scale <- (if (identical(value, "P_AR_gt_0")) reference_ar else
+        reference_probability)$scales$get_scales("fill")
+      stopifnot(identical(scale$map(seq(0, 1, length.out = 101)),
+        reference_scale$map(seq(0, 1, length.out = 101))))
+    }
+    ggplot() + geom_sf(data = boundary, fill = "grey92", colour = "grey60", linewidth = 0.2) +
+      missing_result_hatch_layer(mainland) +
+      geom_sf(data = map_data, aes(fill = .data[[value]]), colour = "white", linewidth = 0.10) +
+      geom_sf(data = clusters, fill = NA, colour = "black", linewidth = 0.30) +
+      geom_text_repel(data = label_data, aes(x = x, y = y, label = cluster, size = label_size), seed = 42,
+        fontface = "bold", colour = "black", bg.color = "white", bg.r = 0.035,
+        force = 0, force_pull = 0, max.iter = 0, max.time = 0,
+        box.padding = 0, point.padding = 0, min.segment.length = Inf,
+        max.overlaps = Inf) + scale_size_identity() + scale +
+      coord_sf(datum = NA, expand = FALSE) +
+      labs(title = title, subtitle = subtitle, caption = caption) +
+      (if (identical(value, "P_AR_gt_0")) reference_ar$theme else
+        if (identical(value, "P_IRR_gt_1")) reference_probability$theme else reference_irr$theme)
+  }
+  ratio_scale <- function(values, legend) {
+    stopifnot(all(is.finite(values)), all(values >= 1 & values <= 2))
+    scale_fill_gradientn(colours = c("white", "#B2182B"),
+      limits = c(1, 2), breaks = seq(1, 2, by = 0.2),
+      labels = function(x) sprintf("%.1f", x), name = legend,
+      guide = guide_colourbar(barheight = grid::unit(65, "mm")))
+  }
+  prob_scale <- function(legend, reference = reference_probability) {
+    scale <- reference$scales$get_scales("fill")$clone()
+    scale$name <- legend
+    scale$labels <- scales::label_percent(accuracy = 1)
+    scale
+  }
+  
+  acute_map <- zip_info %>% mutate(log_irr = log(IRR_median)) %>% select(-cluster)
+  heat_subtitle <- paste0("Negative-binomial model | Posterior median IRRs for +", sprintf("%.2f\u00b0F", heat_sd_f),
+    " (1 SD)\nSES heat slopes + zone curves | ZIP iid + PC hyperpriors")
+  heat_caption <- "SD is calculated county-wide. Missing-zone ZIPs retain the shared heat curve and SES-specific slope."
+  export(map_plot(acute_map, "IRR_median", "Los Angeles acute-heat incidence rate ratios",
+    heat_subtitle, ratio_scale(zip_info$IRR_median[zip_info$GEOID %in% polygons$GEOID],
+      "Acute-heat IRR\n(1 = no change)"), by = "GEOID",
+    caption = heat_caption), "acute_heat_irr_1sd_map")
+  export(map_plot(acute_map, "P_IRR_gt_1", "Los Angeles posterior exceedance probabilities",
+    paste0("Negative-binomial model | Posterior probability of an increased rate\nfor +", sprintf("%.2f\u00b0F", heat_sd_f),
+      " (1 SD) from each ZIP's average | SES heat slopes + PC hyperpriors"),
+    prob_scale(expression(Pr(IRR["1SD"] > 1 ~ "|" ~ Y))), by = "GEOID",
+    caption = heat_caption), "acute_heat_probability_map")
+  
+  cluster_order <- as.character(prepared$cluster_vuln$cluster)
+  forest_theme <- theme_bw(base_size = 12) + theme(panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), plot.title = element_text(face = "bold"),
+    plot.caption = element_text(hjust = 0, size = 9), plot.margin = margin(12, 18, 12, 12))
+  forest <- function(data, point, lower, upper, title, subtitle, xlab, caption, ratio = TRUE) {
+    p <- ggplot(data, aes(y = row)) +
+      geom_vline(xintercept = if (ratio) 1 else 0, linetype = "dashed", colour = "grey50") +
+      geom_segment(aes(x = .data[[lower]], xend = .data[[upper]], yend = row),
+        colour = "#2166AC", linewidth = 0.65) +
+      geom_point(aes(x = .data[[point]]), colour = "#2166AC", size = 2.7) +
+      labs(title = title, subtitle = subtitle, x = xlab, y = NULL, caption = caption) + forest_theme
+    if (ratio) p <- p + scale_x_log10(breaks = scales::breaks_log(n = 6), labels = scales::label_number())
+    p
+  }
+  baseline <- baseline %>% mutate(row = factor(cluster, levels = cluster_order,
+    labels = paste0("Cluster ", cluster_order, ifelse(cluster_order == reference, " (reference)", ""))))
+  export(forest(baseline, "IRR", "lower", "upper", "Baseline cluster IRRs",
+    paste0(model_label, "\nConditional SES contrasts; reference: cluster ", reference),
+    "Baseline cluster IRR (log scale)",
+    "Points: exp(posterior mean log IRR); bars: 95% credible intervals. Reference IRR = 1 by definition.\nClusters ordered by vulnerability, least vulnerable at bottom."), "baseline_cluster_irr_forest")
+  heat <- unique(zip_info[c("cluster", "climate_zone", "IRR_median", "IRR_lower", "IRR_upper", "P_IRR_gt_1", "heat_sd_f")])
+  heat$zone_label <- ifelse(is.na(heat$climate_zone), "Climate zone unavailable", paste("Climate zone", heat$climate_zone))
+  zone_levels <- c(paste("Climate zone", sort(unique(as.numeric(na.omit(heat$climate_zone))))), "Climate zone unavailable")
+  heat$zone_label <- factor(heat$zone_label, levels = zone_levels)
+  heat$row <- factor(heat$cluster, levels = cluster_order, labels = paste("Cluster", cluster_order))
+  write.csv(heat %>% select(-row), file.path(results_dir, "acute_heat_irr_1sd_by_cluster_zone.csv"), row.names = FALSE)
+  export(forest(heat, "IRR_median", "IRR_lower", "IRR_upper", "Acute-heat IRRs per one SD",
+    heat_subtitle, sprintf("Acute-heat IRR for +%.2f\u00b0F (log scale)", heat_sd_f),
+    "ZIP mean heat versus one SD above that mean; remaining model terms held fixed.\nPoints: posterior medians; bars: 95% credible intervals. Heat responses vary by SES cluster and climate zone.") +
+      facet_wrap(~zone_label, ncol = 3),
+    "acute_heat_irr_1sd_forest")
+  
+  ar_file <- file.path(results_dir, "cluster_excess_rates.rds")
+  if (file.exists(ar_file)) {
+    ar <- readRDS(ar_file)
+    provenance <- readRDS(file.path(results_dir, "provenance.rds"))
+    stopifnot(identical(ar$provenance$model_md5, provenance$model_md5), all(ar$summary$n_samples == 2000))
+    ar <- ar$summary %>% mutate(cluster = sub("^cluster", "", cluster))
+    ar_subtitle <- paste0("Negative-binomial model | baseline PC priors\n",
+      "Cluster-average excess ED rate: observed heat versus\neach SES cluster's monthly 2018 mean heat")
+    export(map_plot(ar, "P_AR_gt_0", "Probability of Positive Cluster-Average Excess ED Rate",
+      ar_subtitle, prob_scale(expression(Pr(AR[c](theta) > 0 ~ "|" ~ Y)), reference_ar), caption = NULL), "excess_rate_probability_map")
+    ar$row <- factor(ar$cluster, levels = cluster_order, labels = paste("Cluster", cluster_order))
+    export(forest(ar, "AR_mean", "AR_q025", "AR_q975", "Cluster-average signed excess rates",
+      ar_subtitle, "Excess visits per 10,000 people per day",
+      "Points: posterior means; bars: 95% credible intervals from 2,000 joint posterior draws.\nPositive and negative contributions included; each usable ZIP-day receives equal weight.", ratio = FALSE),
+      "excess_rate_forest")
+  } else message("Excess-rate sampling still pending; exporting two IRR maps and two forest plots.")
+  # Keep the original three-map set; baseline cluster IRRs have their own forest.
+  expected_maps <- c("acute_heat_irr_1sd_map", "acute_heat_probability_map", "excess_rate_probability_map")
+  stopifnot(all(names(plots)[grepl("_map$", names(plots))] %in% expected_maps))
+  if (file.exists(ar_file)) stopifnot(setequal(names(plots), c(expected_maps,
+    "baseline_cluster_irr_forest", "acute_heat_irr_1sd_forest", "excess_rate_forest")))
+  # Use the same panel-alignment approach as the existing map exports below.
+  grobs <- lapply(plots, ggplotGrob)
+  map_names <- names(grobs)[grepl("_map$", names(grobs))]
+  common_widths <- do.call(grid::unit.pmax, lapply(grobs[map_names], function(g) g$widths))
+  common_heights <- do.call(grid::unit.pmax, lapply(grobs[map_names], function(g) g$heights))
+  save_names <- if (is.null(figure_names)) names(grobs) else figure_names
+  stopifnot(length(save_names) > 0L, all(save_names %in% names(grobs)))
+  for (name in save_names) {
+    if (name %in% map_names) {
+      grobs[[name]]$widths <- common_widths
+      grobs[[name]]$heights <- common_heights
+    }
+    for (ext in c("png", "pdf")) {
+      target <- file.path(output_dir, paste0(name, ".", ext))
+      if (identical(name, "acute_heat_irr_1sd_forest"))
+        ggsave(target, grobs[[name]], width = 12, height = 9.5, dpi = map_dpi, bg = "white",
+          device = if (ext == "pdf") grDevices::cairo_pdf else NULL) else
+        save_project_map(target, grobs[[name]])
+    }
+    message("Saved ", name)
+  }
+  writeLines(c("BASELINE PC NEGATIVE-BINOMIAL FIGURES", model_label,
+    paste("Source model:", file.path(results_dir, "nbinomial_model.rds")),
+    paste0("Baseline cluster IRRs: conditional SES contrasts, relative to cluster ", reference, "."),
+    paste0("Acute-heat IRRs: ", heat_increment, " above each ZIP's overall mean, versus that mean."),
+    "Acute heat retains the common and SES-specific slopes, shared RW2 curve, and correlated climate-zone deviations.",
+    "Excess rates: observed heat versus the SES-cluster monthly mean; signed visits/10,000 people/day.",
+    "Maps use the existing mainland extent, 10 by 8 inch canvases, SES outlines and haloed cluster numbers.",
+    "Visual reference: maps/climate_zone_added; its saved ggplot themes are reused.",
+    "IRR legend is fixed at 1.0-2.0 with ticks every 0.2; probability legends remain fixed at 0-100%.",
+    "IRR uses the positive side of the climate_zone_added palette: white at 1.0 and red (#B2182B) at 2.0.",
+    "Probability maps retain their climate_zone_added blue-off-white-red palette with midpoint 50%.",
+    "Only three maps are exported: acute-heat IRR, acute-heat IRR exceedance probability, and excess-rate exceedance probability.",
+    "Forest plots: baseline cluster IRRs (separately labeled), acute-heat IRRs, and excess rates.",
+    "Each PNG has a PDF counterpart. Full diagnostics remain in the source model's folder."),
+    file.path(results_dir, "figure_notes.txt"))
+}
+
+nb_pc_mode <- "--nb-pc" %in% commandArgs(trailingOnly = TRUE) ||
+  (exists("model_variant", inherits = FALSE) && identical(model_variant, "nb_pc_prior"))
+if (nb_pc_mode) {
+  export_nb_pc_figures()
+} else {
 # Map acute-heat IRRs: linear slopes or full nonlinear heat contrasts.
 library(dplyr)
 library(ggplot2)
@@ -16,7 +243,9 @@ project_dir <- if (length(script_files)) {
 source(file.path(project_dir, "shared_functions.R"))
 input_dir <- file.path(project_dir, "Los_Angeles_discrete_none")
 model_prefix <- "Los_Angeles_discrete_none_HEAT_by_cluster"
-if (!exists("model_variant", inherits = FALSE)) model_variant <- "climate_zone"
+if (!exists("model_variant", inherits = FALSE)) model_variant <- "climate_zone_added"
+if (identical(model_variant, "climate_zone"))
+  stop("The climate_zone results were removed. Select climate_zone_added or use --nb-pc for the current model.")
 results_root <- if (model_variant %in% c("climate_zone_added", "climate_zone")) {
   file.path(input_dir, model_variant)
 } else file.path(input_dir, "linear_cluster")
@@ -30,14 +259,14 @@ read_irr_map_inputs <- function(model_dir) {
     assignments <- readRDS(file.path(input_dir, "Los Angeles_ACS_zcta_clustered_for_ED.rds"))
     assignments <- sf::st_drop_geometry(assignments) %>%
       transmute(GEOID = as.character(GEOID), cluster = as.character(cluster))
-    geometry <- readRDS(file.path(input_dir, "linear_cluster", basename(model_dir), "los_angeles_zcta_2020.rds"))
+    geometry <- readRDS(file.path(input_dir, "los_angeles_zcta_2020.rds"))
     return(read_full_heat_irr_inputs(model_dir, assignments, geometry))
   }
   estimates <- read.csv(file.path(model_dir, "acute_heat_cluster_summary.csv"),
                         colClasses = c(cluster = "character"))
   assignments <- read.csv(file.path(model_dir, "acute_heat_zcta_probabilities.csv"),
                           colClasses = c(GEOID = "character", cluster = "character"))
-  geometry <- readRDS(file.path(input_dir, "linear_cluster", basename(model_dir), "los_angeles_zcta_2020.rds"))
+  geometry <- readRDS(file.path(input_dir, "los_angeles_zcta_2020.rds"))
   if (model_variant %in% c("climate_zone_added", "climate_zone")) {
     return(read_full_heat_irr_inputs(model_dir, assignments, geometry))
   }
@@ -355,3 +584,5 @@ for (model_name in names(irr_maps)) {
 }
 
 message("Finished. IRR maps saved in: ", paste(unname(model_dirs), collapse = ", "))
+
+}

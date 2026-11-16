@@ -18,25 +18,118 @@ save_project_map <- function(filename, plot) {
   stopifnot(file.rename(temporary, filename))
 }
 
+# Constrained Gaussian draws from the saved INLA precision, using CHOLMOD.
+# Adding A'A changes only directions fixed by Ax=e; conditioning removes it.
+heat_matrix_qsample <- function(n = 1L, Q, b, mu, sample, constr,
+  reordering = "amd", seed = 0L, logdens = !(missing(sample)),
+  compute.mean = !(missing(sample)), num.threads = NULL, selection = NULL,
+  verbose = FALSE, .debug = FALSE) {
+  stopifnot(missing(b), missing(sample))
+  if (!Matrix::isSymmetric(Q)) {
+    entries <- Matrix::summary(Q)
+    if (all(entries$i <= entries$j)) Q <- Matrix::forceSymmetric(Q, uplo = "U") else
+      if (all(entries$i >= entries$j)) Q <- Matrix::forceSymmetric(Q, uplo = "L") else
+        stop("Gaussian precision is neither symmetric nor stored as one triangle.")
+  }
+  dimension <- nrow(Q)
+  if (missing(mu)) mu <- numeric(dimension)
+  mu <- as.numeric(mu)
+  stopifnot(length(mu) == dimension, all(is.finite(mu)))
+  has_constraint <- !missing(constr) && !is.null(constr)
+  if (has_constraint) {
+    A <- Matrix::Matrix(constr$A, sparse = TRUE)
+    e <- as.numeric(constr$e)
+    row_norm <- sqrt(Matrix::rowSums(A * A))
+    stopifnot(all(row_norm > 0), length(e) == nrow(A))
+    A <- Matrix::Diagonal(x = 1 / row_norm) %*% A
+    e <- e / row_norm
+    precision <- Matrix::forceSymmetric(Q + Matrix::crossprod(A))
+  } else precision <- Matrix::forceSymmetric(Q)
+  factor <- Matrix::Cholesky(precision, LDL = FALSE, perm = TRUE, super = FALSE)
+  saved_rng <- if (exists(".Random.seed", .GlobalEnv)) get(".Random.seed", .GlobalEnv) else NULL
+  on.exit(if (!is.null(saved_rng)) assign(".Random.seed", saved_rng, .GlobalEnv))
+  if (seed > 0L) set.seed(seed) else if (seed < 0L && exists(".heat_gaussian_rng", .GlobalEnv))
+    assign(".Random.seed", get(".heat_gaussian_rng", .GlobalEnv), .GlobalEnv)
+  normal <- matrix(stats::rnorm(dimension * n), dimension, n)
+  assign(".heat_gaussian_rng", get(".Random.seed", .GlobalEnv), .GlobalEnv)
+  draws <- as.matrix(Matrix::solve(factor, Matrix::solve(factor, normal, system = "Lt"), system = "Pt"))
+  draws <- draws + mu
+  conditional_mean <- mu
+  logdet_precision <- 2 * sum(log(Matrix::diag(Matrix::expand(factor)$L)))
+  free_dimension <- dimension
+  if (has_constraint) {
+    W <- Matrix::solve(factor, Matrix::t(A))
+    M <- as.matrix(A %*% W)
+    correction <- solve(M, matrix(e, nrow(A), n) - as.matrix(A %*% draws))
+    draws <- draws + as.matrix(W %*% correction)
+    conditional_mean <- mu + as.numeric(W %*% solve(M, e - as.numeric(A %*% mu)))
+    stopifnot(max(abs(as.matrix(A %*% draws) - e)) < 1e-6)
+    logdet_precision <- logdet_precision + as.numeric(determinant(M, logarithm = TRUE)$modulus) -
+      as.numeric(determinant(as.matrix(A %*% Matrix::t(A)), logarithm = TRUE)$modulus)
+    free_dimension <- dimension - nrow(A)
+  }
+  centered <- draws - conditional_mean
+  density <- 0.5 * (logdet_precision - free_dimension * log(2 * pi) -
+    colSums(centered * as.matrix(precision %*% centered)))
+  stopifnot(all(is.finite(draws)), all(is.finite(density)))
+  if (is.null(selection)) selection <- seq_len(dimension)
+  draws <- draws[selection, , drop = FALSE]
+  if (logdens || compute.mean) {
+    result <- list(sample = draws, logdens = density, mean = conditional_mean[selection])
+    if (.debug) {
+      columns <- Matrix::sparseMatrix(i = selection, j = seq_along(selection), x = 1,
+                                      dims = c(dimension, length(selection)))
+      covariance <- Matrix::solve(factor, columns)
+      variance <- covariance[cbind(selection, seq_along(selection))]
+      if (has_constraint) {
+        selected_W <- as.matrix(W[selection, , drop = FALSE])
+        variance <- variance - rowSums(selected_W * t(solve(M, t(selected_W))))
+      }
+      result$variance <- as.numeric(variance)
+    }
+    result
+  } else draws
+}
+
 # Bound posterior-sampling memory by restarting an R worker periodically.
 # The R RNG state is carried between workers; INLA's seed is set per batch.
-heat_posterior_sampler <- function(model, model_file = NULL, draws_per_worker = 500L) {
+heat_posterior_sampler <- function(model, model_file = NULL, draws_per_worker = 500L,
+                                   qsample_reordering = NULL, qsample_binary = NULL,
+                                   matrix_sampler = FALSE) {
   worker <- NULL
   worker_draws <- 0L
-  setup_worker <- function(paths, path) {
+  setup_worker <- function(paths, path, reordering, binary, gaussian_sampler) {
     .libPaths(paths)
     assign(".heat_sampling_model", readRDS(path), envir = .GlobalEnv)
     loadNamespace("INLA")
+    if (!is.null(gaussian_sampler)) {
+      utils::assignInNamespace("inla.qsample", gaussian_sampler, ns = "INLA")
+      return(NULL)
+    }
+    if (!is.null(binary)) {
+      stopifnot(file.exists(binary))
+      INLA::inla.setOption(inla.call = binary)
+    }
+    if (!is.null(reordering)) {
+      stopifnot(reordering %in% INLA::inla.reorderings())
+      qsample <- get("inla.qsample", envir = asNamespace("INLA"))
+      # Only change the matrix permutation; leave the sampled posterior intact.
+      formals(qsample)$reordering <- reordering
+      utils::assignInNamespace("inla.qsample", qsample, ns = "INLA")
+    }
     NULL
   }
   draw_worker <- function(n, selection, seed, rng) {
     assign(".Random.seed", rng, envir = .GlobalEnv)
     samples <- INLA::inla.posterior.sample(n, get(".heat_sampling_model", .GlobalEnv),
-      selection = selection, seed = seed, num.threads = "1:1", add.names = FALSE)
+      selection = selection, seed = seed, num.threads = "1:1", add.names = FALSE,
+      verbose = identical(Sys.getenv("CALHEAT_SAMPLE_VERBOSE"), "true"))
     list(samples = samples, rng = get(".Random.seed", .GlobalEnv))
   }
   # Avoid serializing the enclosing model and socket connections with functions.
   environment(setup_worker) <- environment(draw_worker) <- baseenv()
+  gaussian_sampler <- if (matrix_sampler) heat_matrix_qsample else NULL
+  if (!is.null(gaussian_sampler)) environment(gaussian_sampler) <- baseenv()
   close_worker <- function() {
     if (!is.null(worker)) try(parallel::stopCluster(worker), silent = TRUE)
     worker <<- NULL
@@ -52,7 +145,8 @@ heat_posterior_sampler <- function(model, model_file = NULL, draws_per_worker = 
       message("Starting fresh posterior-sampling worker (up to ", draws_per_worker, " draws).")
       worker <<- parallel::makePSOCKcluster(1L, outfile = "")
       parallel::clusterCall(worker, setup_worker, .libPaths(),
-        normalizePath(model_file, winslash = "/", mustWork = TRUE))
+        normalizePath(model_file, winslash = "/", mustWork = TRUE), qsample_reordering, qsample_binary,
+        gaussian_sampler)
       worker_draws <<- 0L
     }
     result <- parallel::clusterCall(worker, draw_worker,
@@ -64,7 +158,7 @@ heat_posterior_sampler <- function(model, model_file = NULL, draws_per_worker = 
   list(sample = sample_batch, close = close_worker)
 }
 
-# Shared calculations for hri_ed_analysis.R and acute_heat.R.
+# Shared data, fitting, posterior-sampling and mapping helpers.
 # Sourcing this file only defines functions; it does not load data or fit models.
 
 # Fixed probability scale shared by all probability maps.
@@ -324,7 +418,7 @@ fit_heat_model <- function(prepared, cache_dir, family = c("poisson", "nbinomial
     data = data, formula = deparse(model_formula), family = family,
     lincombs = heat_lincombs, contrasts = getOption("contrasts"),
     control.compute = compute_settings, control.predictor = predictor_settings,
-    INLA_version = as.character(utils::packageVersion("INLA")), cache_version = 1L))
+    INLA_version = as.character(utils::packageVersion("INLA")), cache_version = 2L))
   cache_file <- file.path(cache_dir, paste0("heat_", family, cache_tag, "_fit.rds"))
   cached <- if (!force_refit && file.exists(cache_file)) readRDS(cache_file) else NULL
   cluster_terms <- names(heat_lincombs)
@@ -336,9 +430,10 @@ fit_heat_model <- function(prepared, cache_dir, family = c("poisson", "nbinomial
   message("Fitting ", family, " heat model with heat-contrast linear combinations...")
   fit <- INLA::inla(
     # E supplies the population offset: expected count = Population * exp(eta).
-    model_formula, family = family, data = data, E = data$Population,
+    model_formula, family = family, data = data, E = Population,
     lincomb = heat_lincombs, control.compute = compute_settings,
     control.predictor = predictor_settings)
+  stopifnot(isTRUE(all.equal(as.numeric(fit$.args$E), as.numeric(data$Population))))
   if (!all(cluster_terms %in% names(fit$marginals.lincomb.derived))) {
     stop("INLA did not return all requested heat-contrast marginals.")
   }
@@ -348,6 +443,32 @@ fit_heat_model <- function(prepared, cache_dir, family = c("poisson", "nbinomial
   dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
   saveRDS(list(signature = signature, fit = fit), cache_file)
   fit
+}
+
+# Derived ZIP-model diagnostics; standard model summaries use summary(fit).
+summarise_zip_fit <- function(fit, data, family, reference_cluster) {
+  hp <- grep("Precision for zip_id", names(fit$marginals.hyperpar), fixed = TRUE)
+  stopifnot(length(hp) == 1L)
+  sd_marginal <- INLA::inla.tmarginal(function(tau) 1 / sqrt(tau), fit$marginals.hyperpar[[hp]])
+  sd_q <- INLA::inla.qmarginal(c(0.025, 0.975), sd_marginal)
+  mu <- fit$summary.fitted.values$mean * data$Population
+  size <- if (family == "nbinomial") fit$summary.hyperpar[
+    grep("size", rownames(fit$summary.hyperpar), ignore.case = TRUE), "mean"][1] else NA_real_
+  metrics <- data.frame(family = family,
+    DIC = fit$dic$dic, WAIC = fit$waic$waic,
+    observed_zero_fraction = mean(data$D2 == 0),
+    predicted_zero_fraction_plugin = mean(if (family == "poisson") exp(-mu) else
+      dnbinom(0, mu = mu, size = size)),
+    zip_sd_mean = INLA::inla.emarginal(identity, sd_marginal),
+    zip_sd_lower = sd_q[1], zip_sd_upper = sd_q[2])
+  fixed <- fit$summary.fixed
+  terms <- intersect(paste0("cluster", levels(data$cluster)), rownames(fixed))
+  clusters <- data.frame(family = family, cluster = sub("^cluster", "", terms),
+    IRR = exp(fixed[terms, "mean"]),
+    lower = exp(fixed[terms, "0.025quant"]), upper = exp(fixed[terms, "0.975quant"]))
+  clusters <- rbind(data.frame(family = family, cluster = as.character(reference_cluster),
+    IRR = 1, lower = 1, upper = 1), clusters)
+  list(metrics = metrics, clusters = clusters)
 }
 
 summarise_heat_slopes <- function(model, cluster_ids) {

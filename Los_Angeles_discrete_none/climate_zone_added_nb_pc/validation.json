@@ -1,0 +1,179 @@
+{
+  "status": "completed",
+  "checks": [
+    {
+      "name": "Correlation PC prior matches native INLA two-zone benchmark",
+      "passed": true,
+      "detail": 1.7763568394002505e-15
+    },
+    {
+      "name": "Five-zone correlation density agrees with matrix determinant and numerical Jacobian",
+      "passed": true,
+      "detail": 1.3054979319804261e-10
+    },
+    {
+      "name": "Original fixed design and all 14 SES heat slopes preserved",
+      "passed": true,
+      "detail": {
+        "coefficients": 40,
+        "observations": 54910
+      }
+    },
+    {
+      "name": "Original population offsets and heat grid preserved",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Negative-binomial likelihood and converged mode",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Gaussian sampling backend matches saved constrained INLA variances",
+      "passed": true,
+      "detail": {
+        "configurations": 3,
+        "max_relative_variance_error": 2.9451568770371621e-08
+      }
+    },
+    {
+      "name": "Exactly four random-effect precision terms",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "PC precision prior doy",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "PC precision prior acute_heat_rw2_shared",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "PC precision prior acute_heat_rw2_dev",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Exchangeable zone correlation uses the calibrated PC table",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "PC precision prior zip_id",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "PC prior on negative-binomial size",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "42 finite cluster-by-zone full heat contrasts",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "All 42 saved contrasts have exact SES, shared-curve and zone-curve weights",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "2000 finite signed joint excess-rate draws for each SES cluster",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Excess-rate provenance matches the corrected model",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Three requested maps exported as PNG and PDF",
+      "passed": true,
+      "detail": {}
+    }
+  ],
+  "map_files": [
+    {
+      "path": "maps/nb_pc_prior/acute_heat_irr_1sd_map.png",
+      "md5": "fda2210cc2eff3b1211b75f566640a56",
+      "size": 855050
+    },
+    {
+      "path": "maps/nb_pc_prior/acute_heat_probability_map.png",
+      "md5": "431b8d62f754306f3f8ee6417c1a2cfd",
+      "size": 875462
+    },
+    {
+      "path": "maps/nb_pc_prior/excess_rate_probability_map.png",
+      "md5": "ec47b4c6f6334a35c14c184686da1ad6",
+      "size": 867753
+    },
+    {
+      "path": "maps/nb_pc_prior/acute_heat_irr_1sd_map.pdf",
+      "md5": "043181b3f49c8cc56191d6a7cca3f5a5",
+      "size": 344436
+    },
+    {
+      "path": "maps/nb_pc_prior/acute_heat_probability_map.pdf",
+      "md5": "b6860135883ed92043514d620cd87c53",
+      "size": 350707
+    },
+    {
+      "path": "maps/nb_pc_prior/excess_rate_probability_map.pdf",
+      "md5": "e434eed29fe10279f234c799ea1313f6",
+      "size": 346484
+    }
+  ],
+  "plot_settings": {
+    "acute_heat_irr_1sd_map": {
+      "limits": [
+        1,
+        2
+      ],
+      "breaks": [
+        1,
+        1.2,
+        1.3999999999999999,
+        1.6000000000000001,
+        1.8,
+        2
+      ],
+      "labels": [
+        "1.0",
+        "1.2",
+        "1.4",
+        "1.6",
+        "1.8",
+        "2.0"
+      ],
+      "endpoint_colours": [
+        "#FFFFFF",
+        "#B2182B"
+      ]
+    }
+  },
+  "separate_marginal_mean_discrepancy_log_irr": 0.0017810448118385598,
+  "model_md5": "81fd01583ef1cb2dc258c64d2f65328f",
+  "correlation_pc_prior": {
+    "type": "PC exchangeable correlation",
+    "K": 5,
+    "base": 0,
+    "u": 0.5,
+    "alpha": 0.10000000000000001,
+    "calibration": "P(rho > 0.5) = 0.1",
+    "branch_probability": 0.5,
+    "lambda": 1.2439403565848397,
+    "mass": 0.99999999977057819,
+    "interpolated_mass": 0.99999999985671306,
+    "calibrated_tail": 0.099999999999082531,
+    "support": [-0.25, 1],
+    "internal_table_bounds": [-300, 120]
+  },
+  "interpretation": "Finite implementation checks passed; approximate Bayesian inference and the specified prior calibration remain modeling assumptions."
+}

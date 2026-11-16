@@ -18,7 +18,7 @@ local({
 # Redraw all three mainland probability maps with identical panel dimensions.
 library(ggplot2)
 source("shared_functions.R")
-model_variant <- "climate_zone"  # "climate_zone", "climate_zone_added", or "linear_cluster"
+model_variant <- "climate_zone_added"  # "climate_zone_added" or "linear_cluster"
 model_family <- "poisson"  # "poisson", "nbinomial", or "both"
 root <- file.path("Los_Angeles_discrete_none")
 results_root <- if (model_variant %in% c("climate_zone_added", "climate_zone")) file.path(root, model_variant) else file.path(root, "linear_cluster")
@@ -27,7 +27,7 @@ assignments <- readRDS(file.path(root, "Los Angeles_ACS_zcta_clustered_for_ED.rd
 if (inherits(assignments, "sf")) assignments <- sf::st_drop_geometry(assignments)
 assignments$cluster <- as.character(assignments$cluster)
 geometry <- mainland_probability_geometry(
-  readRDS(file.path(root, "linear_cluster", "acute_heat_poisson/los_angeles_zcta_2020.rds")), assignments)
+  readRDS(file.path(root, "los_angeles_zcta_2020.rds")), assignments)
 plots <- list()
 paths <- character()
 probability_folders <- switch(model_family,

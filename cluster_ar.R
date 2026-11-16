@@ -10,7 +10,10 @@ cluster_heat_reference <- function(data) {
 cluster_ar_exceedance <- function(model, data, reference_cluster,
                                   n_samples = 2000L, batch_size = 50L,
                                   seed = 20260910L, nonlinear_heat = NULL,
-                                  sampling_model_file = NULL) {
+                                  sampling_model_file = NULL,
+                                  draws_per_worker = 500L, checkpoint_file = NULL,
+                                  qsample_reordering = NULL, qsample_binary = NULL,
+                                  matrix_sampler = FALSE) {
   stopifnot(n_samples > 0L, n_samples == as.integer(n_samples),
             batch_size > 0L, batch_size == as.integer(batch_size),
             seed > 0L, seed + n_samples < .Machine$integer.max,
@@ -68,9 +71,33 @@ cluster_ar_exceedance <- function(model, data, reference_cluster,
   cluster_AR <- matrix(NA_real_, nrow = length(clusters), ncol = n_samples,
                        dimnames = list(paste0("cluster", clusters), NULL))
   set.seed(seed)
-  sampler <- heat_posterior_sampler(model, model_file = sampling_model_file)
+  completed <- 0L
+  if (!is.null(checkpoint_file)) {
+    checkpoint_spec <- list(data = data, nonlinear_heat = nonlinear_heat,
+      model_md5 = if (!is.null(sampling_model_file)) unname(tools::md5sum(sampling_model_file)) else model,
+      seed = seed, n_samples = n_samples)
+    checkpoint_signature <- heat_object_md5(checkpoint_spec)
+    if (file.exists(checkpoint_file)) {
+      checkpoint <- readRDS(checkpoint_file)
+      # Accept legacy checkpoints that included the computational batch size.
+      old_batch <- if (is.null(checkpoint$batch_size)) 50L else checkpoint$batch_size
+      legacy_signature <- heat_object_md5(c(checkpoint_spec, list(batch_size = old_batch)))
+      stopifnot(checkpoint$signature %in% c(checkpoint_signature, legacy_signature),
+                identical(dim(checkpoint$draws), dim(cluster_AR)))
+      cluster_AR <- checkpoint$draws
+      completed <- checkpoint$completed
+      assign(".Random.seed", checkpoint$rng, envir = .GlobalEnv)
+      message("Resuming after ", completed, " completed draws.")
+    }
+  }
+  sampler <- heat_posterior_sampler(model, model_file = sampling_model_file,
+                                    draws_per_worker = draws_per_worker,
+                                    qsample_reordering = qsample_reordering,
+                                    qsample_binary = qsample_binary,
+                                    matrix_sampler = matrix_sampler)
   on.exit(sampler$close(), add = TRUE)
-  for (start in seq.int(1L, n_samples, by = batch_size)) {
+  starts <- if (completed < n_samples) seq.int(completed + 1L, n_samples, by = batch_size) else integer()
+  for (start in starts) {
     end <- min(start + batch_size - 1L, n_samples)
     message("AR posterior draws ", start, "-", end, " of ", n_samples)
     samples <- sampler$sample(end - start + 1L, selection = selection,
@@ -129,6 +156,14 @@ cluster_ar_exceedance <- function(model, data, reference_cluster,
     }
     rm(samples)
     gc(verbose = FALSE)
+    if (!is.null(checkpoint_file)) {
+      checkpoint <- list(signature = checkpoint_signature, draws = cluster_AR,
+                         completed = end, batch_size = batch_size,
+                         rng = get(".Random.seed", .GlobalEnv))
+      temporary <- paste0(checkpoint_file, ".tmp")
+      saveRDS(checkpoint, temporary)
+      stopifnot(file.rename(temporary, checkpoint_file))
+    }
   }
   n_positive <- rowSums(cluster_AR > 0)
   intervals <- t(apply(cluster_AR, 1L, quantile, probs = c(0.025, 0.975)))
@@ -141,8 +176,68 @@ cluster_ar_exceedance <- function(model, data, reference_cluster,
     row.names = NULL)
   list(summary = summary, draws = cluster_AR,
        settings = list(seed = seed, n_samples = n_samples, batch_size = batch_size,
+                       resumed_draws = completed, draws_per_worker = draws_per_worker,
+                       qsample_reordering = qsample_reordering,
+                       qsample_binary = qsample_binary,
+                       gaussian_sampler = if (matrix_sampler) "Matrix CHOLMOD, conditioned on saved INLA constraints" else "INLA native qsample",
                        weighting = "equal ZIP-day", counterfactual = if (is.null(nonlinear_heat$ar_reference)) "ZIP-mean heat" else nonlinear_heat$ar_reference,
                        reference_acute_heat = reference_acute,
                        units = "excess rate per 10000 population per day",
                        INLA_version = as.character(utils::packageVersion("INLA")), nonlinear_heat = nonlinear_heat))
 }
+
+# Reuse the existing sampler for a saved corrected negative-binomial fit.
+run_saved_heat_excess_rates <- function(
+  source_model = "Los_Angeles_discrete_none/climate_zone_added_nb_pc/nbinomial_model.rds",
+  output_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc", input_dir = "Los_Angeles_discrete_none",
+  draws_per_worker = 250L) {
+  .libPaths(c("C:/Users/yysma/AppData/Local/R/win-library/4.4", .libPaths()))
+  library(INLA)
+  library(dplyr)
+  library(tidyr)
+  source("shared_functions.R")
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  prepared <- load_heat_data(input_dir)
+  fit <- readRDS(source_model)
+  meta <- fit$nonlinear_heat
+  stopifnot(nrow(prepared$daily_ed) == length(meta$zone),
+            isTRUE(all.equal(as.numeric(fit$.args$E), as.numeric(prepared$daily_ed$Population))))
+  info <- list(n_observations = nrow(fit$summary.linear.predictor), names.fixed = fit$names.fixed)
+  # Verify fitted rows match the reconstruction of the main model inputs.
+  for (field in intersect(names(fit$.args$data), names(prepared$daily_ed)))
+    stopifnot(isTRUE(all.equal(fit$.args$data[[field]], prepared$daily_ed[[field]], check.attributes = FALSE)))
+  provenance <- list(model = normalizePath(source_model, winslash = "/"),
+    model_md5 = unname(tools::md5sum(source_model)), heat_sd_f = prepared$heat_sd,
+    reference_cluster = prepared$reference_cluster, fitted_version = fit$version,
+    data_md5 = heat_object_md5(prepared$daily_ed))
+  saveRDS(provenance, file.path(output_dir, "provenance.rds"))
+  rm(fit); gc(verbose = FALSE)
+  ar_file <- file.path(output_dir, "cluster_excess_rates.rds")
+  if (!file.exists(ar_file)) {
+    ar <- cluster_ar_exceedance(info, prepared$daily_ed, prepared$reference_cluster,
+      n_samples = 2000L, batch_size = 250L, seed = 20260910L,
+      nonlinear_heat = meta, sampling_model_file = source_model, draws_per_worker = draws_per_worker,
+      qsample_reordering = "amd",
+      matrix_sampler = TRUE,
+      checkpoint_file = file.path(output_dir, "excess_rate_checkpoint.rds"))
+    ar$provenance <- provenance
+    saveRDS(ar, ar_file)
+  } else {
+    ar <- readRDS(ar_file)
+    stopifnot(identical(ar$provenance$model_md5, provenance$model_md5))
+  }
+  write.csv(ar$summary, file.path(output_dir, "cluster_excess_rates.csv"), row.names = FALSE)
+  writeLines(c("CORRECTED NEGATIVE-BINOMIAL EXCESS RATES",
+    "Signed rates per 10,000 people per day; equal weight per usable ZIP-day.",
+    "Reference: the SES cluster's mean standardized heat in that month.",
+    "2000 joint posterior draws; seed 20260910; new batches contain at most 250 draws.",
+    paste("Retained checkpoint draws:", ar$settings$resumed_draws),
+    paste("Gaussian sampler for subsequent draws:", ar$settings$gaussian_sampler),
+    paste("Source model MD5:", provenance$model_md5),
+    capture.output(print(ar$summary, row.names = FALSE, digits = 5))),
+    file.path(output_dir, "excess_rate_results.txt"))
+  message("Completed 2000 draws and saved corrected negative-binomial excess rates.")
+}
+
+if (sys.nframe() == 0L && "--nb-pc" %in% commandArgs(trailingOnly = TRUE))
+  run_saved_heat_excess_rates()

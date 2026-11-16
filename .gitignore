@@ -32,19 +32,20 @@ calenviroscreen/
 /archive/
 !/methods/*.pdf
 
-# Keep exported map PDFs and the explicitly archived helper scripts.
+# Keep exported map PDFs.
 !/maps/**/*.pdf
 !/maps/*.pdf
-!/archive/
-/archive/*
-!/archive/analysis_functions.R
-!/archive/vulnerability_score.R
-!/archive/hri_ed.R
 
 # Local diagnostics and execution logs are not publication outputs.
-/cluster_diagnostics.R
 /cluster_diagnostics/
 /model_diagnostics.R
 /model_diagnostics/
 *.log
 /Los_Angeles_discrete_none/Los Angeles_ACS_diss_mats_MIN.rds
+
+# Keep compact current NB outputs; leave the fit working files local.
+/Los_Angeles_discrete_none/climate_zone_added_nb_pc/inla_work/
+/Los_Angeles_discrete_none/climate_zone_added_nb_pc/excess_rate_checkpoint.rds
+/Los_Angeles_discrete_none/climate_zone_added_nb_pc/stdout.txt
+/Los_Angeles_discrete_none/climate_zone_added_nb_pc/stderr.txt
+!/methods/climate_zone_added_nb_pc/*.pdf

@@ -69,7 +69,6 @@ daily_ed <- daily_ed %>%
     daily_sum_raw = sum(D2, na.rm = TRUE),
     baseline = if_else(D2_suppressed, 1, 0), 
     share = if_else(daily_sum_raw > 0, D2 / daily_sum_raw, 1 / n_days),
-    zero_month_pick = sample.int(n(), 1),
     
     # ===== exact monthly number given -> daily sum must match exactly =====
     target_exact = if_else(!is.na(mo_num), round(mo_num), NA_real_),
@@ -81,16 +80,16 @@ daily_ed <- daily_ed %>%
     pool_cap = if_else(exceeds_cap, pmax((mo_upper - 1) - sum(baseline), 0), NA_real_),
     D2_cap_case = allocate_remainder(pool_cap, share, baseline),
     
+    # Preserve original daily zeros, including the seven ZIP-months with
+    # monthly totals <12 but all-zero daily records (exceptions to reconciliation).
     D2 = case_when(suppressWarnings(as.numeric(D2Dx1)) == 0 ~ 0,
                    !is.na(mo_num) ~ D2_exact_case,
                    mo_suppressed & exceeds_cap ~ D2_cap_case,
-                   mo_suppressed & !exceeds_cap & sum(D2) == 0 ~ 
-                     if_else(row_number() == zero_month_pick, 1, D2), 
                    mo_suppressed & !exceeds_cap ~ pmax(D2, if_else(D2_suppressed, 1, D2)),
                    TRUE ~ D2)) %>% ungroup() %>%
   select(-mo_suppressed, -mo_upper, -mo_num, -baseline, -share,
          -target_exact, -pool_exact, -D2_exact_case,
-         -exceeds_cap, -pool_cap, -D2_cap_case, -zero_month_pick)
+         -exceeds_cap, -pool_cap, -D2_cap_case)
 gc()
 
 # ============================================================
