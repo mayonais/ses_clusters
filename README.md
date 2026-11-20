@@ -238,13 +238,18 @@ contrasts because neither is needed for this comparison.
 `hri_ed_analysis.R` is the single main entry point for the current corrected NB
 model, output generation and retained precision-prior sensitivity comparisons.
 It replaces the disabled historical workflow and the former separate NB script.
+Its fitting commands share the INLA call, saved-fit summaries, baseline-input
+loading and output protection. The variance-100 restart uses the same coefficient
+sensitivity function as the initial comparisons. All command-line options and
+current result locations are unchanged.
 The zero diagnostic in its summary tables uses fitted posterior mean rates and
 posterior mean NB size; it is a plug-in diagnostic. ZIP SD summaries transform
 the posterior precision marginal.
 
 - `hri_ed_analysis.R`: current fitting, output generation and prior sensitivity.
-- `acute_heat_irr_maps.R`: computes complete one-SD heat contrasts from INLA
-  linear-combination marginals and exports the matching IRR/probability maps.
+- `acute_heat_irr_maps.R`: loads saved NB summaries and exports the three maps
+  and three forest plots. Input loading, geometry, plot construction and file
+  export are separate functions; the unused historical plotting branch was removed.
 - `shared_functions.R`: data preparation, fitting, contrasts, and map helpers.
 - `cluster_ar.R`: active helper called by `hri_ed_analysis.R` for signed
   cluster-average excess rates and their posterior probabilities, comparing
@@ -263,7 +268,8 @@ Regenerate the current NB outputs from the saved fit:
 Rscript hri_ed_analysis.R --outputs-only
 ```
 
-The map helpers retain support for explicitly selected older model variants.
+`acute_heat_irr_maps.R` serves the current NB workflow. The separate
+`create_map.R` still supports the retained `linear_cluster` plots.
 Fitting, count reconstruction, and clustering are separate actions; the map
 scripts do not automatically run those upstream steps.
 

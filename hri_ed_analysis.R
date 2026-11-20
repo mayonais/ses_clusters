@@ -1,14 +1,5 @@
 # NB climate-zone model with ZIP iid and PC hyperpriors. Acute heat enters only
 # through the shared and correlated zone RW2 curves, without linear SES slopes.
-# Run: Rscript hri_ed_analysis.R --preflight
-# Run: Rscript hri_ed_analysis.R --fit-only
-# Run: Rscript hri_ed_analysis.R --outputs-only  (reuse the saved fit)
-# Run: Rscript hri_ed_analysis.R --validate-only
-# Run: Rscript hri_ed_analysis.R --sensitivity  (four corrected-model prior comparisons)
-# Run: Rscript hri_ed_analysis.R --likelihood-comparison  (matched Poisson vs saved NB; no draws)
-# Run: Rscript hri_ed_analysis.R --coefficient-sensitivity  (Normal variances 100 and 10; no draws)
-# Run: Rscript hri_ed_analysis.R --rerun-variance-100  (restart from fitted solution; no draws)
-# Run: Rscript hri_ed_analysis.R  (fit, 2000 excess-rate draws, figures, and checks)
 .libPaths(c("C:/Users/yysma/AppData/Local/R/win-library/4.4", .libPaths()))
 
 # Two-sided PC prior on the five-zone exchangeable correlation, base rho = 0.
@@ -151,6 +142,74 @@ preserved_nb_inputs <- function(precision_prior = list(prior = "pc.prec", param 
   result
 }
 
+restore_model_formula <- function(inputs) {
+  formula <- inputs[["formula"]]
+  if (!is.null(formula)) return(formula)
+  formula_env <- new.env(parent = .GlobalEnv)
+  formula_env$precision_hyper <- inputs$precision_hyper
+  formula_env$zone_correlation_hyper <- inputs$zone_correlation_hyper
+  as.formula(paste(inputs$formula_text, collapse = "\n"), env = formula_env)
+}
+
+fit_inla_model <- function(inputs, output_dir, family = "nbinomial",
+  fixed_prior = inputs$fixed_prior, lincomb = NULL, save_config = FALSE, start = NULL) {
+  formula <- restore_model_formula(inputs)
+  exposure <- if (is.null(inputs$exposure)) inputs$data$Population else inputs$exposure
+  family_prior <- if (family == "nbinomial") inputs$family_prior else list()
+  if (is.null(start)) start <- list()
+  gc(verbose = FALSE)
+  elapsed <- system.time(fit <- INLA::inla(formula, family = family,
+    data = inputs$data, E = exposure, control.fixed = fixed_prior,
+    control.family = family_prior, lincomb = lincomb, control.mode = start,
+    control.compute = list(dic = TRUE, waic = TRUE, config = save_config),
+    control.predictor = list(compute = TRUE), num.threads = "2:1", verbose = TRUE,
+    working.directory = file.path(normalizePath(output_dir, winslash = "/", mustWork = TRUE), "inla_work")))[["elapsed"]]
+  stopifnot(fit$mode$mode.status == 0L, all(is.finite(fit$summary.fixed$mean)),
+    all(is.finite(fit$summary.hyperpar$mean)))
+  fit$analysis_elapsed_seconds <- elapsed
+  fit
+}
+
+summarise_heat_fit <- function(fit, full) {
+  heat <- full$combinations
+  values <- lapply(heat$lincomb_id, function(id) {
+    marginal <- fit$marginals.lincomb.derived[[id]]
+    stopifnot(!is.null(marginal))
+    q <- INLA::inla.qmarginal(c(0.025, 0.5, 0.975), marginal)
+    c(IRR_median = exp(q[2]), IRR_lower = exp(q[1]), IRR_upper = exp(q[3]),
+      P_IRR_gt_1 = 1 - INLA::inla.pmarginal(0, marginal))
+  })
+  heat <- cbind(heat, as.data.frame(do.call(rbind, values)))
+  stopifnot(all(is.finite(as.matrix(heat[c("IRR_median", "IRR_lower", "IRR_upper", "P_IRR_gt_1")]))),
+    all(heat$IRR_lower > 0), all(heat$P_IRR_gt_1 >= 0 & heat$P_IRR_gt_1 <= 1))
+  list(heat = heat,
+    fixed = data.frame(term = rownames(fit$summary.fixed), fit$summary.fixed, row.names = NULL),
+    hyper = data.frame(term = rownames(fit$summary.hyperpar), fit$summary.hyperpar, row.names = NULL),
+    mode_status = fit$mode$mode.status)
+}
+
+write_fit_details <- function(fit, output_dir, results = NULL,
+  summary_file = "diagnostics.txt", prior_file = "fitted_priors.txt") {
+  capture.output(summary(fit), file = file.path(output_dir, summary_file))
+  capture.output(str(fit$all.hyper, max.level = 6), file = file.path(output_dir, prior_file))
+  if (!is.null(results)) {
+    saveRDS(results, file.path(output_dir, "summaries.rds"))
+    for (name in c("heat", "fixed", "hyper"))
+      write.csv(results[[name]], file.path(output_dir, paste0(name, "_details.csv")), row.names = FALSE)
+  }
+}
+
+protected_output_hashes <- function(output_dir, extra = character()) {
+  paths <- c(list.files("Los_Angeles_discrete_none/climate_zone_added_nb_pc", full.names = TRUE),
+    list.files("maps/nb_pc_prior", full.names = TRUE, recursive = TRUE),
+    list.files("methods", full.names = TRUE, recursive = TRUE), extra)
+  paths <- sort(unique(normalizePath(paths[!dir.exists(paths)], winslash = "/", mustWork = TRUE)))
+  hashes <- tools::md5sum(paths)
+  file <- file.path(output_dir, "protected_files.rds")
+  if (file.exists(file)) stopifnot(identical(hashes, readRDS(file))) else saveRDS(hashes, file)
+  hashes
+}
+
 fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc",
   fit_only = FALSE, preflight = FALSE, save_config = TRUE, restart_fit = FALSE,
   precision_prior = list(prior = "pc.prec", param = c(1, 0.01))) {
@@ -186,22 +245,16 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
   }
   if (!file.exists(model_file) || restart_fit) {
     lincombs <- c(make_heat_lincombs(inputs$data, inputs$formula), full$lincombs)
-    gc(verbose = FALSE)
     message("Fitting preserved climate_zone_added NB model; precision prior: ",
       precision_prior$prior, " (", paste(precision_prior$param, collapse = ", "), ").")
-    elapsed <- system.time(fit <- INLA::inla(inputs$formula, family = "nbinomial",
-      data = inputs$data, E = inputs$data$Population, control.fixed = inputs$fixed_prior,
-      control.family = inputs$family_prior, lincomb = lincombs,
-      control.mode = initial_mode,
-      control.compute = list(dic = TRUE, waic = TRUE, config = save_config),
-      control.predictor = list(compute = TRUE), num.threads = "2:1", verbose = TRUE,
-      working.directory = file.path(normalizePath(output_dir, winslash = "/", mustWork = TRUE),
-        "inla_work")))[["elapsed"]]
+    fit <- fit_inla_model(inputs, output_dir, lincomb = lincombs,
+      save_config = save_config, start = initial_mode)
     fit$nonlinear_heat <- inputs$nonlinear_heat
     fit$full_heat_irr <- full
     fit$preserved_nb_specification <- list(source_files = inputs$source_files,
       source_md5 = inputs$source_md5, fixed_design_md5 = inputs$fixed_design_md5,
-      correlation = inputs$correlation$specification, precision_prior = precision_prior, elapsed = elapsed,
+      correlation = inputs$correlation$specification, precision_prior = precision_prior,
+      elapsed = fit$analysis_elapsed_seconds,
       restarted_from_saved_mode = restart_fit)
     stopifnot(fit$mode$mode.status == 0L, all(is.finite(fit$summary.fixed$mean)),
       all(is.finite(fit$summary.hyperpar$mean)),
@@ -209,25 +262,10 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
     saveRDS(fit, model_file)
   } else fit <- readRDS(model_file)
   diagnostics <- summarise_zip_fit(fit, inputs$data, "nbinomial", inputs$reference_cluster)
-  heat <- full$combinations
-  heat_summaries <- lapply(heat$lincomb_id, function(id) {
-    marginal <- fit$marginals.lincomb.derived[[id]]
-    stopifnot(!is.null(marginal))
-    q <- INLA::inla.qmarginal(c(0.025, 0.5, 0.975), marginal)
-    c(IRR_median = exp(q[2]), IRR_lower = exp(q[1]), IRR_upper = exp(q[3]),
-      P_IRR_gt_1 = 1 - INLA::inla.pmarginal(0, marginal))
-  })
-  heat <- cbind(heat, as.data.frame(do.call(rbind, heat_summaries)))
-  results <- list(metrics = diagnostics$metrics, clusters = diagnostics$clusters,
-    heat = heat, fixed = data.frame(term = rownames(fit$summary.fixed), fit$summary.fixed, row.names = NULL),
-    hyper = data.frame(term = rownames(fit$summary.hyperpar), fit$summary.hyperpar, row.names = NULL),
-    mode_status = fit$mode$mode.status, specification = fit$preserved_nb_specification,
-    sampling_info = list(n_observations = nrow(inputs$data), names.fixed = fit$names.fixed))
-  saveRDS(results, file.path(output_dir, "summaries.rds"))
-  capture.output(summary(fit), file = file.path(output_dir, "diagnostics.txt"))
-  capture.output(str(fit$all.hyper, max.level = 6), file = file.path(output_dir, "fitted_priors.txt"))
-  for (component in c("fixed", "hyper", "heat"))
-    write.csv(results[[component]], file.path(output_dir, paste0(component, "_details.csv")), row.names = FALSE)
+  results <- c(list(metrics = diagnostics$metrics, clusters = diagnostics$clusters),
+    summarise_heat_fit(fit, full), list(specification = fit$preserved_nb_specification,
+    sampling_info = list(n_observations = nrow(inputs$data), names.fixed = fit$names.fixed)))
+  write_fit_details(fit, output_dir, results)
   write.csv(inputs$correlation$table, file.path(output_dir, "correlation_pc_prior.csv"), row.names = FALSE)
   precision_description <- if (identical(precision_prior$prior, "pc.prec"))
     sprintf("Four precision priors: pc.prec, P(1/sqrt(tau) > %g) = %g.",
@@ -255,10 +293,9 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
   invisible(results)
 }
 
-# Validation implementation shares the current model helpers in this file.
 validate_nb_pc_model <- function(
   results_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc",
-  with_maps = FALSE, map_dir = "maps/nb_pc_prior",
+  with_maps = TRUE, map_dir = "maps/nb_pc_prior",
   precision_prior = list(prior = "pc.prec", param = c(1, 0.01)),
   with_excess_rates = with_maps, check_sampling = TRUE) {
   suppressPackageStartupMessages(library(INLA))
@@ -462,15 +499,6 @@ validate_nb_pc_model <- function(
   invisible(report)
 }
 
-validate_preserved_nb <- function(results_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc",
-  with_maps = TRUE, map_dir = "maps/nb_pc_prior",
-  precision_prior = list(prior = "pc.prec", param = c(1, 0.01)),
-  with_excess_rates = with_maps, check_sampling = TRUE) {
-  validate_nb_pc_model(results_dir = results_dir,
-    with_maps = with_maps, map_dir = map_dir, precision_prior = precision_prior,
-    with_excess_rates = with_excess_rates, check_sampling = check_sampling)
-}
-
 export_preserved_nb_outputs <- function(
   results_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc",
   map_dir = "maps/nb_pc_prior") {
@@ -479,11 +507,11 @@ export_preserved_nb_outputs <- function(
   model_file <- file.path(results_dir, "nbinomial_model.rds")
   stopifnot(file.exists(model_file), file.exists(file.path(results_dir, "summaries.rds")))
   run_saved_heat_excess_rates(source_model = model_file, output_dir = results_dir)
-  # Load only the map function, without executing historical default exports.
   map_environment <- new.env(parent = environment())
-  eval(parse("acute_heat_irr_maps.R")[[1L]], envir = map_environment)
+  map_environment$.map_functions_only <- TRUE
+  source("acute_heat_irr_maps.R", local = map_environment)
   map_environment$export_nb_pc_figures(output_dir = map_dir, results_dir = results_dir)
-  validate_preserved_nb(results_dir = results_dir, with_maps = TRUE, map_dir = map_dir)
+  validate_nb_pc_model(results_dir = results_dir, with_maps = TRUE, map_dir = map_dir)
 }
 
 run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb", restart_scenarios = character()) {
@@ -515,7 +543,7 @@ run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb", restar
       save_config = identical(scenario, "pc_baseline"),
       restart_fit = scenario %in% restart_scenarios,
       precision_prior = scenarios[[scenario]])
-    validate_preserved_nb(results_dir = scenario_dir, with_maps = FALSE,
+    validate_nb_pc_model(results_dir = scenario_dir, with_maps = FALSE,
       with_excess_rates = FALSE, check_sampling = FALSE, precision_prior = scenarios[[scenario]])
     fit <- readRDS(file.path(scenario_dir, "nbinomial_model.rds"))
     size <- fit$all.hyper$family[[1L]]$hyper[[1L]]
@@ -654,73 +682,65 @@ likelihood_common_priors <- function(fit) {
       correlation = if (term$hyperid == "acute_heat_rw2_dev") hyper(term$group.hyper[[1L]]) else NULL)))
 }
 
+baseline_comparison_inputs <- function() {
+  baseline_file <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc/nbinomial_model.rds"
+  fit <- readRDS(baseline_file)
+  saved <- readRDS("Los_Angeles_discrete_none/climate_zone_added_nb_pc/summaries.rds")
+  stopifnot(identical(fit$.args$family, "nbinomial"), fit$mode$mode.status == 0L,
+    length(fit$names.fixed) == 26L, nrow(fit$.args$data) == 54910L,
+    length(unique(fit$.args$data$zip)) == 309L,
+    identical(as.numeric(fit$.args$E), as.numeric(fit$.args$data$Population)),
+    identical(saved$metrics$DIC, fit$dic$dic), identical(saved$metrics$WAIC, fit$waic$waic))
+  precision <- list(prec = list(prior = "pc.prec", param = c(1, 0.01)))
+  correlation <- exchangeable_pc_prior(5)$hyper
+  for (term in fit$all.hyper$fixed) stopifnot(term$prior.mean == 0,
+    term$prior.prec == if (term$label == "(Intercept)") 0 else 0.001)
+  for (term in fit$all.hyper$random) {
+    stopifnot(identical(as.character(term$hyper[[1L]]$prior), precision$prec$prior),
+      identical(as.numeric(term$hyper[[1L]]$param), precision$prec$param))
+    if (term$hyperid == "acute_heat_rw2_dev") stopifnot(
+      identical(as.character(term$group.hyper[[1L]]$prior), correlation$rho$prior))
+  }
+  size <- fit$all.hyper$family[[1L]]$hyper[[1L]]
+  size <- list(prior = as.character(size$prior), param = as.numeric(size$param), fixed = as.logical(size$fixed))
+  stopifnot(identical(size, list(prior = "pc.mgamma", param = 7, fixed = FALSE)))
+  inputs <- list(data = fit$.args$data, exposure = fit$.args$E,
+    formula_text = deparse(fit$.args$formula), fixed_prior = fit$.args$control.fixed,
+    precision_hyper = precision, zone_correlation_hyper = correlation,
+    common_priors = likelihood_common_priors(fit),
+    family_prior = list(hyper = list(theta = list(prior = "pc.mgamma", param = 7))),
+    nonlinear_heat = fit$nonlinear_heat, names_fixed = fit$names.fixed,
+    baseline_md5 = unname(tools::md5sum(baseline_file)), INLA_version = as.character(packageVersion("INLA")),
+    size_prior = size)
+  list(inputs = inputs, reference = list(zero = likelihood_zero_diagnostics(fit, inputs$data, "nbinomial"),
+    heat = saved$heat, fixed = saved$fixed, hyper = saved$hyper, mode_status = fit$mode$mode.status))
+}
+
 run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/climate_zone_added_poisson_pc") {
   suppressPackageStartupMessages(library(INLA))
   source("shared_functions.R")
-  baseline_dir <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc"
-  baseline_file <- file.path(baseline_dir, "nbinomial_model.rds")
+  baseline_file <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc/nbinomial_model.rds"
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  protected <- sort(unique(normalizePath(c(list.files(baseline_dir, full.names = TRUE),
-    list.files("maps/nb_pc_prior", full.names = TRUE, recursive = TRUE),
-    list.files("methods", full.names = TRUE, recursive = TRUE)), winslash = "/", mustWork = TRUE)))
-  protected <- protected[!dir.exists(protected)]
-  before <- tools::md5sum(protected)
-  protection_file <- file.path(output_dir, "protected_files.rds")
-  if (file.exists(protection_file)) stopifnot(identical(before, readRDS(protection_file))) else
-    saveRDS(before, protection_file)
+  before <- protected_output_hashes(output_dir)
+  protected <- names(before)
   input_file <- file.path(output_dir, "matched_inputs.rds")
   reference_file <- file.path(output_dir, "nb_baseline_diagnostics.rds")
   if (!file.exists(input_file) || !file.exists(reference_file)) {
-    message("Reading the saved NB fit once; extracting matched inputs and zero diagnostics.")
-    baseline <- readRDS(baseline_file)
-    stopifnot(identical(baseline$.args$family, "nbinomial"), baseline$mode$mode.status == 0L,
-      length(baseline$names.fixed) == 26L)
-    # INLA strips the saved formula environment; recreate its two named priors
-    # and verify them against the priors recorded in the fitted baseline.
-    precision_hyper <- list(prec = list(prior = "pc.prec", param = c(1, 0.01)))
-    zone_correlation_hyper <- exchangeable_pc_prior(5)$hyper
-    for (term in baseline$all.hyper$random) {
-      stopifnot(identical(as.character(term$hyper[[1L]]$prior), precision_hyper$prec$prior),
-        identical(as.numeric(term$hyper[[1L]]$param), precision_hyper$prec$param))
-      if (term$hyperid == "acute_heat_rw2_dev") stopifnot(
-        identical(as.character(term$group.hyper[[1L]]$prior), zone_correlation_hyper$rho$prior))
-    }
-    inputs <- list(data = baseline$.args$data, exposure = baseline$.args$E,
-      formula_text = deparse(baseline$.args$formula), fixed_prior = baseline$.args$control.fixed,
-      precision_hyper = precision_hyper, zone_correlation_hyper = zone_correlation_hyper,
-      common_priors = likelihood_common_priors(baseline),
-      nonlinear_heat = baseline$nonlinear_heat, names_fixed = baseline$names.fixed,
-      baseline_md5 = unname(before[normalizePath(baseline_file, winslash = "/")]),
-      INLA_version = as.character(packageVersion("INLA")))
-    stopifnot(identical(inputs$precision_hyper$prec$prior, "pc.prec"),
-      identical(as.numeric(inputs$precision_hyper$prec$param), c(1, 0.01)),
-      nrow(inputs$data) == 54910L, length(unique(inputs$data$zip)) == 309L)
-    saveRDS(inputs, input_file)
-    reference <- likelihood_zero_diagnostics(baseline, inputs$data, "nbinomial")
-    saveRDS(reference, reference_file)
-    rm(baseline, reference, inputs, term); gc(verbose = FALSE)
+    baseline <- baseline_comparison_inputs()
+    saveRDS(baseline$inputs, input_file)
+    saveRDS(baseline$reference$zero, reference_file)
+    rm(baseline); gc(verbose = FALSE)
   }
   inputs <- readRDS(input_file)
   stopifnot(identical(inputs$baseline_md5, unname(tools::md5sum(baseline_file))),
     identical(inputs$INLA_version, as.character(packageVersion("INLA"))))
-  formula_env <- new.env(parent = .GlobalEnv)
-  formula_env$precision_hyper <- inputs$precision_hyper
-  formula_env$zone_correlation_hyper <- inputs$zone_correlation_hyper
-  formula <- as.formula(paste(inputs$formula_text, collapse = "\n"), env = formula_env)
   model_file <- file.path(output_dir, "poisson_model.rds")
   if (!file.exists(model_file)) {
     message("Fitting matched Poisson model: same data, offsets, fixed effects and random-effect priors; no draws.")
-    gc(verbose = FALSE)
-    elapsed <- system.time(fit <- INLA::inla(formula, family = "poisson", data = inputs$data,
-      E = inputs$exposure, control.fixed = inputs$fixed_prior,
-      control.compute = list(dic = TRUE, waic = TRUE, config = FALSE),
-      control.predictor = list(compute = TRUE), num.threads = "2:1", verbose = TRUE,
-      working.directory = file.path(normalizePath(output_dir, winslash = "/"), "inla_work")))[["elapsed"]]
+    fit <- fit_inla_model(inputs, output_dir, family = "poisson")
     fit$nonlinear_heat <- inputs$nonlinear_heat
     fit$matched_likelihood_comparison <- list(baseline_md5 = inputs$baseline_md5,
-      elapsed_seconds = elapsed, excess_rate_draws = 0L)
-    stopifnot(fit$mode$mode.status == 0L, all(is.finite(fit$summary.fixed$mean)),
-      all(is.finite(fit$summary.hyperpar$mean)))
+      elapsed_seconds = fit$analysis_elapsed_seconds, excess_rate_draws = 0L)
     saveRDS(fit, model_file)
   } else fit <- readRDS(model_file)
   stopifnot(identical(fit$names.fixed, inputs$names_fixed),
@@ -731,8 +751,8 @@ run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/cl
     fit$mode$mode.status == 0L)
   poisson <- likelihood_zero_diagnostics(fit, inputs$data, "poisson")
   saveRDS(poisson, file.path(output_dir, "poisson_diagnostics.rds"))
-  capture.output(summary(fit), file = file.path(output_dir, "poisson_fit_summary.txt"))
-  capture.output(str(fit$all.hyper, max.level = 6), file = file.path(output_dir, "poisson_fitted_priors.txt"))
+  write_fit_details(fit, output_dir, summary_file = "poisson_fit_summary.txt",
+    prior_file = "poisson_fitted_priors.txt")
   rm(fit, inputs); gc(verbose = FALSE)
   nb <- readRDS(reference_file)
   comparison <- rbind(nb$metrics, poisson$metrics)
@@ -773,83 +793,65 @@ run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/cl
   invisible(comparison)
 }
 
-run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance") {
+run_coefficient_sensitivity <- function(
+  output_dir = "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance", restart_100 = FALSE) {
   suppressPackageStartupMessages(library(INLA))
   source("shared_functions.R")
-  baseline_dir <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc"
-  baseline_file <- file.path(baseline_dir, "nbinomial_model.rds")
+  baseline_file <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc/nbinomial_model.rds"
+  comparison_dir <- output_dir
+  input_file <- file.path(comparison_dir, "matched_inputs.rds")
+  reference_file <- file.path(comparison_dir, "baseline_variance_1000.rds")
+  extra <- character()
+  if (restart_100) {
+    original_dir <- file.path(comparison_dir, "variance_100")
+    original_file <- file.path(original_dir, "nbinomial_model.rds")
+    if (!all(file.exists(c(input_file, reference_file, original_file))))
+      stop("Run --coefficient-sensitivity before restarting its variance-100 fit.")
+    output_dir <- file.path(comparison_dir, "variance_100_rerun")
+    extra <- c(list.files(comparison_dir, full.names = TRUE), list.files(original_dir, full.names = TRUE),
+      list.files(file.path(comparison_dir, "variance_10"), full.names = TRUE))
+  }
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  protected <- c(list.files(baseline_dir, full.names = TRUE),
-    list.files("maps/nb_pc_prior", full.names = TRUE, recursive = TRUE),
-    list.files("methods", full.names = TRUE, recursive = TRUE))
-  protected <- sort(normalizePath(protected[!dir.exists(protected)], winslash = "/", mustWork = TRUE))
-  before <- tools::md5sum(protected)
-  protection_file <- file.path(output_dir, "protected_files.rds")
-  if (file.exists(protection_file)) stopifnot(identical(before, readRDS(protection_file))) else
-    saveRDS(before, protection_file)
-  input_file <- file.path(output_dir, "matched_inputs.rds")
-  reference_file <- file.path(output_dir, "baseline_variance_1000.rds")
+  before <- protected_output_hashes(output_dir, extra)
+  protected <- names(before)
   if (!file.exists(input_file) || !file.exists(reference_file)) {
-    message("Reading the existing NB baseline; extracting inputs without modifying its results.")
-    baseline <- readRDS(baseline_file)
-    saved <- readRDS(file.path(baseline_dir, "summaries.rds"))
-    stopifnot(identical(baseline$.args$family, "nbinomial"), baseline$mode$mode.status == 0L,
-      identical(saved$metrics$DIC, baseline$dic$dic), identical(saved$metrics$WAIC, baseline$waic$waic))
-    inputs <- list(data = baseline$.args$data, exposure = baseline$.args$E,
-      formula_text = deparse(baseline$.args$formula), fixed_prior = baseline$.args$control.fixed,
-      precision_hyper = list(prec = list(prior = "pc.prec", param = c(1, 0.01))),
-      zone_correlation_hyper = exchangeable_pc_prior(5)$hyper,
-      common_priors = likelihood_common_priors(baseline),
-      family_prior = list(hyper = list(theta = list(prior = "pc.mgamma", param = 7))),
-      nonlinear_heat = baseline$nonlinear_heat, names_fixed = baseline$names.fixed,
-      baseline_md5 = unname(tools::md5sum(baseline_file)), INLA_version = as.character(packageVersion("INLA")))
-    stopifnot(length(inputs$names_fixed) == 26L, nrow(inputs$data) == 54910L,
-      identical(as.numeric(inputs$exposure), as.numeric(inputs$data$Population)))
-    for (term in baseline$all.hyper$fixed) stopifnot(term$prior.mean == 0,
-      term$prior.prec == if (term$label == "(Intercept)") 0 else 0.001)
-    for (term in baseline$all.hyper$random) {
-      stopifnot(identical(as.character(term$hyper[[1L]]$prior), "pc.prec"),
-        identical(as.numeric(term$hyper[[1L]]$param), c(1, 0.01)))
-      if (term$hyperid == "acute_heat_rw2_dev") stopifnot(
-        identical(as.character(term$group.hyper[[1L]]$prior), inputs$zone_correlation_hyper$rho$prior))
-    }
-    size_prior <- baseline$all.hyper$family[[1L]]$hyper[[1L]]
-    inputs$size_prior <- list(prior = as.character(size_prior$prior), param = as.numeric(size_prior$param),
-      fixed = as.logical(size_prior$fixed))
-    stopifnot(identical(inputs$size_prior, list(prior = "pc.mgamma", param = 7, fixed = FALSE)))
-    reference <- list(zero = likelihood_zero_diagnostics(baseline, inputs$data, "nbinomial"),
-      heat = saved$heat, fixed = saved$fixed, hyper = saved$hyper, mode_status = baseline$mode$mode.status)
-    saveRDS(inputs, input_file)
-    saveRDS(reference, reference_file)
-    rm(baseline, saved, reference, size_prior, term); gc(verbose = FALSE)
-  } else inputs <- readRDS(input_file)
+    baseline <- baseline_comparison_inputs()
+    saveRDS(baseline$inputs, input_file)
+    saveRDS(baseline$reference, reference_file)
+    rm(baseline); gc(verbose = FALSE)
+  }
+  inputs <- readRDS(input_file)
   stopifnot(identical(inputs$baseline_md5, unname(tools::md5sum(baseline_file))),
     identical(inputs$INLA_version, as.character(packageVersion("INLA"))))
-  formula_env <- new.env(parent = .GlobalEnv)
-  formula_env$precision_hyper <- inputs$precision_hyper
-  formula_env$zone_correlation_hyper <- inputs$zone_correlation_hyper
-  formula <- as.formula(paste(inputs$formula_text, collapse = "\n"), env = formula_env)
-  full <- make_full_heat_lincombs(inputs$data, inputs$nonlinear_heat, formula)
+  full <- make_full_heat_lincombs(inputs$data, inputs$nonlinear_heat, restore_model_formula(inputs))
   stopifnot(nrow(full$combinations) == 42L)
   summaries <- list(variance_1000 = readRDS(reference_file))
-  for (variance in c(100, 10)) {
+  variances <- if (restart_100) 100 else c(100, 10)
+  for (variance in variances) {
     scenario <- paste0("variance_", variance)
-    scenario_dir <- file.path(output_dir, scenario)
+    scenario_dir <- if (restart_100) output_dir else file.path(output_dir, scenario)
     dir.create(scenario_dir, showWarnings = FALSE)
     model_file <- file.path(scenario_dir, "nbinomial_model.rds")
     fixed_prior <- inputs$fixed_prior
     fixed_prior$prec <- 1 / variance
+    start <- NULL
+    if (restart_100) {
+      original <- readRDS(original_file)
+      stopifnot(original$mode$mode.status == 0L, original$coefficient_sensitivity$variance == 100,
+        identical(original$.args$data, inputs$data), identical(deparse(original$.args$formula), inputs$formula_text))
+      start <- list(theta = original$mode$theta, x = original$mode$x, restart = TRUE, fixed = FALSE)
+      stopifnot(length(start$theta) == 6L, all(is.finite(start$theta)), all(is.finite(start$x)))
+      saveRDS(start, file.path(output_dir, "starting_solution.rds"))
+      rm(original); gc(verbose = FALSE)
+    }
     if (!file.exists(model_file)) {
       message("COEFFICIENT SENSITIVITY: variance ", variance, "; all PC priors unchanged; no draws.")
-      gc(verbose = FALSE)
-      elapsed <- system.time(fit <- INLA::inla(formula, family = "nbinomial", data = inputs$data,
-        E = inputs$exposure, control.fixed = fixed_prior, control.family = inputs$family_prior,
-        lincomb = full$lincombs, control.compute = list(dic = TRUE, waic = TRUE, config = FALSE),
-        control.predictor = list(compute = TRUE), num.threads = "2:1", verbose = TRUE,
-        working.directory = file.path(normalizePath(scenario_dir, winslash = "/"), "inla_work")))[["elapsed"]]
+      fit <- fit_inla_model(inputs, scenario_dir, fixed_prior = fixed_prior, lincomb = full$lincombs, start = start)
       fit$nonlinear_heat <- inputs$nonlinear_heat
       fit$coefficient_sensitivity <- list(variance = variance, baseline_md5 = inputs$baseline_md5,
-        elapsed_seconds = elapsed, newly_generated_excess_rate_draws = 0L)
+        elapsed_seconds = fit$analysis_elapsed_seconds, newly_generated_excess_rate_draws = 0L)
+      if (restart_100) fit$warm_start_source <- list(file = original_file, md5 = unname(tools::md5sum(original_file)),
+        theta_and_latent_modes = TRUE, restart_optimization = TRUE, hyperparameters_fixed = FALSE)
       saveRDS(fit, model_file)
     } else fit <- readRDS(model_file)
     expected_priors <- inputs$common_priors
@@ -865,33 +867,59 @@ run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/no_li
       identical(fit$coefficient_sensitivity$baseline_md5, inputs$baseline_md5),
       fit$coefficient_sensitivity$variance == variance,
       all(is.finite(fit$summary.fixed$mean)), all(is.finite(fit$summary.hyperpar$mean)))
-    heat <- full$combinations
-    heat <- cbind(heat, as.data.frame(do.call(rbind, lapply(heat$lincomb_id, function(id) {
-      marginal <- fit$marginals.lincomb.derived[[id]]
-      stopifnot(!is.null(marginal))
-      q <- INLA::inla.qmarginal(c(0.025, 0.5, 0.975), marginal)
-      c(IRR_median = exp(q[2]), IRR_lower = exp(q[1]), IRR_upper = exp(q[3]),
-        P_IRR_gt_1 = 1 - INLA::inla.pmarginal(0, marginal))
-    }))))
-    stopifnot(all(is.finite(as.matrix(heat[c("IRR_median", "IRR_lower", "IRR_upper", "P_IRR_gt_1")]))),
-      all(heat$IRR_lower > 0), all(heat$P_IRR_gt_1 >= 0 & heat$P_IRR_gt_1 <= 1))
-    result <- list(zero = likelihood_zero_diagnostics(fit, inputs$data, "nbinomial"), heat = heat,
-      fixed = data.frame(term = rownames(fit$summary.fixed), fit$summary.fixed, row.names = NULL),
-      hyper = data.frame(term = rownames(fit$summary.hyperpar), fit$summary.hyperpar, row.names = NULL),
-      mode_status = fit$mode$mode.status)
-    saveRDS(result, file.path(scenario_dir, "summaries.rds"))
-    for (name in c("heat", "fixed", "hyper"))
-      write.csv(result[[name]], file.path(scenario_dir, paste0(name, "_details.csv")), row.names = FALSE)
-    capture.output(summary(fit), file = file.path(scenario_dir, "diagnostics.txt"))
-    capture.output(str(fit$all.hyper, max.level = 6), file = file.path(scenario_dir, "fitted_priors.txt"))
-    jsonlite::write_json(list(status = "completed", coefficient_variance = variance, mode_status = fit$mode$mode.status,
-      fixed_coefficients = 26L, changed_non_intercept_priors = 25L, PC_priors_unchanged = TRUE,
-      data_predictor_and_exposure_unchanged = TRUE, full_heat_contrasts = 42L, newly_generated_excess_rate_draws = 0L),
-      file.path(scenario_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE)
+    if (restart_100) stopifnot(
+      identical(fit$warm_start_source$md5, unname(tools::md5sum(original_file))),
+      identical(as.numeric(fit$.args$control.mode$theta), as.numeric(start$theta)),
+      identical(as.numeric(fit$.args$control.mode$x), as.numeric(start$x)),
+      isTRUE(fit$.args$control.mode$restart), !isTRUE(fit$.args$control.mode$fixed),
+      length(fit$dic$local.dic) == nrow(inputs$data), length(fit$waic$local.waic) == nrow(inputs$data),
+      all(is.finite(fit$dic$local.dic)), all(is.finite(fit$waic$local.waic)),
+      all(is.finite(as.matrix(fit$summary.fixed))), all(is.finite(as.matrix(fit$summary.hyperpar))),
+      abs(sum(fit$dic$local.dic) - fit$dic$dic) < 1e-6,
+      abs(sum(fit$waic$local.waic) - fit$waic$waic) < 1e-6)
+    result <- c(list(zero = likelihood_zero_diagnostics(fit, inputs$data, "nbinomial")), summarise_heat_fit(fit, full))
+    write_fit_details(fit, scenario_dir, result)
+    if (restart_100) {
+      write.csv(result$zero$grouped, file.path(output_dir, "zero_diagnostics_by_group.csv"), row.names = FALSE)
+    } else {
+      jsonlite::write_json(list(status = "completed", coefficient_variance = variance, mode_status = fit$mode$mode.status,
+        fixed_coefficients = 26L, changed_non_intercept_priors = 25L, PC_priors_unchanged = TRUE,
+        data_predictor_and_exposure_unchanged = TRUE, full_heat_contrasts = 42L, newly_generated_excess_rate_draws = 0L),
+        file.path(scenario_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE)
+    }
     summaries[[scenario]] <- result
-    rm(fit, result, heat, expected_priors, size_prior); gc(verbose = FALSE)
+    rm(fit, expected_priors, size_prior); gc(verbose = FALSE)
     stopifnot(identical(before, tools::md5sum(protected)))
-    message("Validated coefficient variance ", variance, "; baseline, maps and methods unchanged.")
+  }
+  if (restart_100) {
+    original <- readRDS(file.path(original_dir, "summaries.rds"))
+    baseline <- readRDS(file.path(comparison_dir, "baseline_variance_1000.rds"))
+    results <- list(baseline_variance_1000 = baseline, original_variance_100 = original, rerun_variance_100 = result)
+    comparison <- do.call(rbind, lapply(names(results), function(scenario)
+      data.frame(scenario = scenario, results[[scenario]]$zero$metrics, row.names = NULL)))
+    for (j in seq_along(results)) {
+      index <- match(results[[j]]$heat$lincomb_id, original$heat$lincomb_id)
+      stopifnot(!anyNA(index), length(index) == 42L)
+      comparison$max_heat_IRR_change_pct_vs_original[j] <- 100 * max(abs(results[[j]]$heat$IRR_median / original$heat$IRR_median[index] - 1))
+      comparison$max_heat_probability_change_pp_vs_original[j] <- 100 * max(abs(results[[j]]$heat$P_IRR_gt_1 - original$heat$P_IRR_gt_1[index]))
+    }
+    write.csv(comparison, file.path(output_dir, "comparison.csv"), row.names = FALSE)
+    writeLines(c("VARIANCE 100: RESTART FROM ITS FITTED SOLUTION", "",
+      "Same data, predictor and priors as the original variance-100 fit.",
+      "Both saved theta and latent modes initialize the rerun; restart=TRUE and fixed=FALSE allow further optimization.",
+      "No joint-sampling configurations, excess-rate posterior draws or map exports are generated.",
+      "Original sensitivity results, NB baseline, current maps and methods files are preserved.",
+      "The comparison quantifies reproducibility; finite output alone does not establish numerical stability.", "",
+      capture.output(print(comparison, row.names = FALSE, digits = 9))), file.path(output_dir, "comparison.txt"))
+    stopifnot(identical(before, tools::md5sum(protected)))
+    jsonlite::write_json(list(status = "completed", mode_status = result$mode_status,
+      same_model_and_priors = TRUE, warm_start_used = TRUE, optimization_restarted = TRUE,
+      hyperparameters_fixed = FALSE, finite_pointwise_DIC_WAIC_checked = TRUE,
+      protected_files_unchanged = TRUE, protected_file_count = length(before), newly_generated_excess_rate_draws = 0L,
+      original_model_md5 = unname(tools::md5sum(original_file)), baseline_model_md5 = inputs$baseline_md5),
+      file.path(output_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE, digits = 16)
+    print(comparison, row.names = FALSE)
+    return(invisible(comparison))
   }
   combine <- function(fun) do.call(rbind, lapply(names(summaries), function(scenario)
     data.frame(scenario = scenario, fun(summaries[[scenario]]), row.names = NULL)))
@@ -925,130 +953,11 @@ run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/no_li
     "Variance 1000 is the exact saved baseline; only variances 100 and 10 are newly fitted.",
     "Only the Normal variances of the 25 non-intercept fixed coefficients change; prior means remain zero.",
     "The flat intercept, four PC precision priors, exchangeable PC correlation and PC NB-size priors are unchanged.",
-    "Same observations, population exposures, heat grid, SES interactions and ZIP iid intercept.",
+    "Same observations, population exposures, heat grid, shared/zone heat curves and ZIP iid intercept.",
     "No posterior draws or maps are generated. Baseline results, current maps and methods are hash-verified unchanged.",
     "Smaller DIC/WAIC is preferred. Heat changes use the complete 42 cluster-zone contrasts.",
     "Zero checks use posterior mean fitted rates and posterior mean NB size (in-sample plug-in, not fully integrated predictive tests).", "",
     capture.output(print(comparison, row.names = FALSE, digits = 8))), file.path(output_dir, "comparison.txt"))
-  print(comparison, row.names = FALSE)
-  invisible(comparison)
-}
-
-rerun_coefficient_variance_100 <- function(output_dir = "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance/variance_100_rerun") {
-  suppressPackageStartupMessages(library(INLA))
-  source("shared_functions.R")
-  comparison_dir <- "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance"
-  original_dir <- file.path(comparison_dir, "variance_100")
-  original_file <- file.path(original_dir, "nbinomial_model.rds")
-  baseline_dir <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc"
-  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  protected <- c(list.files(baseline_dir, full.names = TRUE),
-    list.files("maps/nb_pc_prior", full.names = TRUE, recursive = TRUE),
-    list.files("methods", full.names = TRUE, recursive = TRUE),
-    list.files(comparison_dir, full.names = TRUE), list.files(original_dir, full.names = TRUE),
-    list.files(file.path(comparison_dir, "variance_10"), full.names = TRUE))
-  protected <- sort(unique(normalizePath(protected[!dir.exists(protected)], winslash = "/", mustWork = TRUE)))
-  before <- tools::md5sum(protected)
-  protection_file <- file.path(output_dir, "protected_files.rds")
-  if (file.exists(protection_file)) stopifnot(identical(before, readRDS(protection_file))) else
-    saveRDS(before, protection_file)
-  inputs <- readRDS(file.path(comparison_dir, "matched_inputs.rds"))
-  stopifnot(identical(inputs$baseline_md5, unname(tools::md5sum(file.path(baseline_dir, "nbinomial_model.rds")))),
-    identical(inputs$INLA_version, as.character(packageVersion("INLA"))))
-  formula_env <- new.env(parent = .GlobalEnv)
-  formula_env$precision_hyper <- inputs$precision_hyper
-  formula_env$zone_correlation_hyper <- inputs$zone_correlation_hyper
-  formula <- as.formula(paste(inputs$formula_text, collapse = "\n"), env = formula_env)
-  full <- make_full_heat_lincombs(inputs$data, inputs$nonlinear_heat, formula)
-  fixed_prior <- inputs$fixed_prior
-  fixed_prior$prec <- 0.01
-  original <- readRDS(original_file)
-  expected_priors <- likelihood_common_priors(original)
-  stopifnot(original$mode$mode.status == 0L, original$coefficient_sensitivity$variance == 100,
-    identical(original$.args$data, inputs$data), identical(deparse(original$.args$formula), inputs$formula_text))
-  start <- list(theta = original$mode$theta, x = original$mode$x, restart = TRUE, fixed = FALSE)
-  stopifnot(length(start$theta) == 6L, all(is.finite(start$theta)), all(is.finite(start$x)))
-  saveRDS(start, file.path(output_dir, "starting_solution.rds"))
-  original_size <- original$all.hyper$family[[1L]]$hyper[[1L]]
-  expected_size <- list(prior = as.character(original_size$prior), param = as.numeric(original_size$param),
-    fixed = as.logical(original_size$fixed))
-  rm(original, original_size); gc(verbose = FALSE)
-  model_file <- file.path(output_dir, "nbinomial_model.rds")
-  if (!file.exists(model_file)) {
-    message("Rerunning variance 100 from its saved theta and latent modes; restart=TRUE, fixed=FALSE; no draws.")
-    elapsed <- system.time(fit <- INLA::inla(formula, family = "nbinomial", data = inputs$data,
-      E = inputs$exposure, control.fixed = fixed_prior, control.family = inputs$family_prior,
-      control.mode = start, lincomb = full$lincombs,
-      control.compute = list(dic = TRUE, waic = TRUE, config = FALSE),
-      control.predictor = list(compute = TRUE), num.threads = "2:1", verbose = TRUE,
-      working.directory = file.path(normalizePath(output_dir, winslash = "/"), "inla_work")))[["elapsed"]]
-    fit$nonlinear_heat <- inputs$nonlinear_heat
-    fit$coefficient_sensitivity <- list(variance = 100, baseline_md5 = inputs$baseline_md5,
-      elapsed_seconds = elapsed, newly_generated_excess_rate_draws = 0L)
-    fit$warm_start_source <- list(file = original_file, md5 = unname(tools::md5sum(original_file)),
-      theta_and_latent_modes = TRUE, restart_optimization = TRUE, hyperparameters_fixed = FALSE)
-    saveRDS(fit, model_file)
-  } else fit <- readRDS(model_file)
-  size <- fit$all.hyper$family[[1L]]$hyper[[1L]]
-  stopifnot(fit$mode$mode.status == 0L, identical(likelihood_common_priors(fit), expected_priors),
-    identical(list(prior = as.character(size$prior), param = as.numeric(size$param), fixed = as.logical(size$fixed)), expected_size),
-    identical(fit$names.fixed, inputs$names_fixed), identical(fit$.args$data, inputs$data),
-    identical(as.numeric(fit$.args$E), as.numeric(inputs$exposure)),
-    identical(deparse(fit$.args$formula), inputs$formula_text),
-    identical(fit$warm_start_source$md5, unname(tools::md5sum(original_file))),
-    identical(as.numeric(fit$.args$control.mode$theta), as.numeric(start$theta)),
-    identical(as.numeric(fit$.args$control.mode$x), as.numeric(start$x)),
-    isTRUE(fit$.args$control.mode$restart), !isTRUE(fit$.args$control.mode$fixed),
-    length(fit$dic$local.dic) == nrow(inputs$data), length(fit$waic$local.waic) == nrow(inputs$data),
-    all(is.finite(fit$dic$local.dic)), all(is.finite(fit$waic$local.waic)),
-    all(is.finite(as.matrix(fit$summary.fixed))), all(is.finite(as.matrix(fit$summary.hyperpar))),
-    abs(sum(fit$dic$local.dic) - fit$dic$dic) < 1e-6,
-    abs(sum(fit$waic$local.waic) - fit$waic$waic) < 1e-6)
-  heat <- full$combinations
-  heat <- cbind(heat, as.data.frame(do.call(rbind, lapply(heat$lincomb_id, function(id) {
-    marginal <- fit$marginals.lincomb.derived[[id]]
-    stopifnot(!is.null(marginal))
-    q <- INLA::inla.qmarginal(c(0.025, 0.5, 0.975), marginal)
-    c(IRR_median = exp(q[2]), IRR_lower = exp(q[1]), IRR_upper = exp(q[3]),
-      P_IRR_gt_1 = 1 - INLA::inla.pmarginal(0, marginal))
-  }))))
-  result <- list(zero = likelihood_zero_diagnostics(fit, inputs$data, "nbinomial"), heat = heat,
-    fixed = data.frame(term = rownames(fit$summary.fixed), fit$summary.fixed, row.names = NULL),
-    hyper = data.frame(term = rownames(fit$summary.hyperpar), fit$summary.hyperpar, row.names = NULL),
-    mode_status = fit$mode$mode.status)
-  saveRDS(result, file.path(output_dir, "summaries.rds"))
-  for (name in c("heat", "fixed", "hyper")) write.csv(result[[name]],
-    file.path(output_dir, paste0(name, "_details.csv")), row.names = FALSE)
-  write.csv(result$zero$grouped, file.path(output_dir, "zero_diagnostics_by_group.csv"), row.names = FALSE)
-  capture.output(summary(fit), file = file.path(output_dir, "diagnostics.txt"))
-  capture.output(str(fit$all.hyper, max.level = 6), file = file.path(output_dir, "fitted_priors.txt"))
-  rm(fit); gc(verbose = FALSE)
-  original <- readRDS(file.path(original_dir, "summaries.rds"))
-  baseline <- readRDS(file.path(comparison_dir, "baseline_variance_1000.rds"))
-  results <- list(baseline_variance_1000 = baseline, original_variance_100 = original, rerun_variance_100 = result)
-  comparison <- do.call(rbind, lapply(names(results), function(scenario)
-    data.frame(scenario = scenario, results[[scenario]]$zero$metrics, row.names = NULL)))
-  for (j in seq_along(results)) {
-    index <- match(results[[j]]$heat$lincomb_id, original$heat$lincomb_id)
-    stopifnot(!anyNA(index), length(index) == 42L)
-    comparison$max_heat_IRR_change_pct_vs_original[j] <- 100 * max(abs(results[[j]]$heat$IRR_median / original$heat$IRR_median[index] - 1))
-    comparison$max_heat_probability_change_pp_vs_original[j] <- 100 * max(abs(results[[j]]$heat$P_IRR_gt_1 - original$heat$P_IRR_gt_1[index]))
-  }
-  write.csv(comparison, file.path(output_dir, "comparison.csv"), row.names = FALSE)
-  writeLines(c("VARIANCE 100: RESTART FROM ITS FITTED SOLUTION", "",
-    "Same data, predictor and priors as the original variance-100 fit.",
-    "Both saved theta and latent modes initialize the rerun; restart=TRUE and fixed=FALSE allow further optimization.",
-    "No joint-sampling configurations, excess-rate posterior draws or map exports are generated.",
-    "Original sensitivity results, NB baseline, current maps and methods files are preserved.",
-    "The comparison quantifies reproducibility; finite output alone does not establish numerical stability.", "",
-    capture.output(print(comparison, row.names = FALSE, digits = 9))), file.path(output_dir, "comparison.txt"))
-  stopifnot(identical(before, tools::md5sum(protected)))
-  jsonlite::write_json(list(status = "completed", mode_status = result$mode_status,
-    same_model_and_priors = TRUE, warm_start_used = TRUE, optimization_restarted = TRUE,
-    hyperparameters_fixed = FALSE, finite_pointwise_DIC_WAIC_checked = TRUE,
-    protected_files_unchanged = TRUE, protected_file_count = length(before), newly_generated_excess_rate_draws = 0L,
-    original_model_md5 = unname(tools::md5sum(original_file)), baseline_model_md5 = inputs$baseline_md5),
-    file.path(output_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE, digits = 16)
   print(comparison, row.names = FALSE)
   invisible(comparison)
 }
@@ -1070,7 +979,7 @@ if (sys.nframe() == 0L) {
     cat("  Rscript hri_ed_analysis.R --coefficient-sensitivity  Normal coefficient variances 100 and 10, no draws\n")
     cat("  Rscript hri_ed_analysis.R --rerun-variance-100  Restart variance 100 from its fitted solution, no draws\n")
   } else if ("--rerun-variance-100" %in% args) {
-    rerun_coefficient_variance_100()
+    run_coefficient_sensitivity(restart_100 = TRUE)
   } else if ("--coefficient-sensitivity" %in% args) {
     run_coefficient_sensitivity()
   } else if ("--likelihood-comparison" %in% args) {
@@ -1078,7 +987,7 @@ if (sys.nframe() == 0L) {
   } else if ("--sensitivity" %in% args) {
     run_nb_prior_sensitivity()
   } else if ("--validate-only" %in% args) {
-    validate_preserved_nb()
+    validate_nb_pc_model()
   } else if ("--outputs-only" %in% args) {
     export_preserved_nb_outputs()
   } else {
