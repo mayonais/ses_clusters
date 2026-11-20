@@ -30,8 +30,7 @@ branch. With seed 1, exactly seven daily counts change from 0 to 1; all other
 counts are unchanged. Run this reconstruction before fitting if rebuilding inputs.
 The corrected daily input has been used to refit both NB and matched Poisson
 models. The NB maps and forest plots have been regenerated using 2,000 joint
-posterior draws for the excess-rate outputs. The preserved `main.pdf` and retained
-coefficient-variance comparisons describe the previous fit; `numbered_methods.pdf`
+posterior draws for the excess-rate outputs. The preserved `main.pdf` describes the previous fit; `numbered_methods.pdf`
 describes the revised model and current precision-prior comparisons.
 The precision-prior comparisons have been replaced with runs of the revised model.
 
@@ -54,17 +53,15 @@ There is one entry point for this NB workflow:
 | `Rscript hri_ed_analysis.R --validate-only` | Check the saved model and outputs |
 | `Rscript hri_ed_analysis.R --sensitivity` | Compare precision priors using the corrected model |
 | `Rscript hri_ed_analysis.R --likelihood-comparison` | Fit a matched Poisson model and compare DIC, WAIC and zeros with the saved NB baseline; no draws |
-| `Rscript hri_ed_analysis.R --coefficient-sensitivity` | Compare NB Normal coefficient variances 100 and 10 against baseline 1000; no draws |
-| `Rscript hri_ed_analysis.R --rerun-variance-100` | Restart variance 100 from its fitted solution and compare numerical reproducibility; no draws |
 
-Fitting, output generation, validation and precision-prior sensitivity are all
-handled by `hri_ed_analysis.R`. There is no separate validation script.
+Fitting, output generation and validation are handled by `hri_ed_analysis.R`.
+The optional comparison commands load `comparison_functions.R`. There is no
+separate validation script.
 
 Results are saved separately in
 `Los_Angeles_discrete_none/climate_zone_added_nb_pc/`; new map exports go to
 `maps/nb_pc_prior/`, reusing the previous locations. Current precision-prior
-comparisons are in `prior_sensitivity_nb/`; its `coefficient_variance/` subfolder
-retains the earlier coefficient-prior checks for the previous model.
+comparisons are in `prior_sensitivity_nb/`.
 
 The four precision priors are `pc.prec`, with `P(SD > 1) = 0.01`. The zone
 correlation has a two-sided PC prior with base zero, equal mass on each sign, and
@@ -149,7 +146,6 @@ was also removed; the current baseline and map workflow read saved results direc
 The four precision-prior scenarios have been rerun for the revised model with
 26 fixed coefficients, no linear heat slopes, and corrected suppressed counts.
 They replace the previous precision-prior fits and reports in `prior_sensitivity_nb/`.
-The separate coefficient-variance results remain historical and have not been rerun.
 
 Run `Rscript hri_ed_analysis.R --sensitivity`. This is a fit-only comparison: it
 does not generate excess-rate posterior draws. It reuses the exact saved current
@@ -186,36 +182,6 @@ The optional correlation and NB-dispersion sensitivity workflow and its outputs
 were removed. The baseline remains the primary model; those two prior groups
 were not fully assessed by the retained sensitivity analysis.
 
-## Previous-model coefficient-prior variance sensitivity
-
-These retained results concern the previous 39 non-intercept coefficients and
-have not been repeated for the revised model's 25 non-intercept coefficients.
-
-Run `Rscript hri_ed_analysis.R --coefficient-sensitivity`. Results are saved in
-`prior_sensitivity_nb/coefficient_variance/`, with new fits in `variance_100/`
-and `variance_10/`. The exact current NB baseline with variance 1000 is reused
-without copying or refitting its model. The two alternatives are fitted
-sequentially and do not save joint-sampling configurations or generate
-excess-rate draws.
-
-Only the zero-centered Normal variances for the 39 non-intercept fixed
-coefficients change. The flat intercept and all PC precision, correlation and
-NB-size priors stay at baseline. Comparison tables include DIC/WAIC, fitted-mean
-zero checks, full heat IRRs with credible intervals and exceedance probabilities,
-and fixed-effect summaries. Hash checks preserve baseline results, current maps
-and methods files. Existing precision-prior sensitivity results are separate.
-
-The coefficient-variance numerical check runs with
-`Rscript hri_ed_analysis.R --rerun-variance-100` and saves a separate fit under
-`prior_sensitivity_nb/coefficient_variance/variance_100_rerun/`. It initializes
-both hyperparameter and latent modes from the original variance-100 solution,
-then allows further optimization (`restart = TRUE`, `fixed = FALSE`). The
-original fit and sensitivity tables are preserved. The rerun saves DIC/WAIC,
-zero diagnostics and complete heat contrasts without generating excess-rate draws.
-The warning-producing original variance-100 fit was removed after this check;
-the retained clean rerun is now the canonical fit in `variance_100/`, and the
-coefficient-sensitivity comparison tables use that retained fit.
-
 ## Matched Poisson comparison
 
 Run `Rscript hri_ed_analysis.R --likelihood-comparison`. Results are saved in
@@ -236,17 +202,16 @@ contrasts because neither is needed for this comparison.
 ## Scripts
 
 `hri_ed_analysis.R` is the single main entry point for the current corrected NB
-model, output generation and retained precision-prior sensitivity comparisons.
-It replaces the disabled historical workflow and the former separate NB script.
-Its fitting commands share the INLA call, saved-fit summaries, baseline-input
-loading and output protection. The variance-100 restart uses the same coefficient
-sensitivity function as the initial comparisons. All command-line options and
-current result locations are unchanged.
+model and output generation. The retained PC-prior and Poisson comparisons
+are implemented in `comparison_functions.R` and use the existing comparison
+commands. Current result locations are unchanged.
 The zero diagnostic in its summary tables uses fitted posterior mean rates and
 posterior mean NB size; it is a plug-in diagnostic. ZIP SD summaries transform
 the posterior precision marginal.
 
-- `hri_ed_analysis.R`: current fitting, output generation and prior sensitivity.
+- `hri_ed_analysis.R`: current baseline fitting, output generation and validation.
+- `comparison_functions.R`: optional PC-prior and matched Poisson/NB comparisons
+  and their supporting diagnostics.
 - `acute_heat_irr_maps.R`: loads saved NB summaries and exports the three maps
   and three forest plots. Input loading, geometry, plot construction and file
   export are separate functions; the unused historical plotting branch was removed.
