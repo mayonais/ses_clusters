@@ -1,163 +1,121 @@
 Time used:
-    Pre = 6.4, Running = 273, Post = 4.97, Total = 285 
+    Pre = 1.97, Running = 109, Post = 3.06, Total = 114 
 Fixed effects:
-                        mean    sd 0.025quant 0.5quant 0.975quant    mode kld
-(Intercept)          -11.208 0.241    -11.681  -11.208    -10.736 -11.208   0
-cluster1              -0.482 0.086     -0.650   -0.482     -0.314  -0.482   0
-cluster10             -0.513 0.156     -0.819   -0.513     -0.207  -0.513   0
-cluster11             -0.213 0.098     -0.406   -0.213     -0.020  -0.213   0
-cluster12             -0.200 0.137     -0.468   -0.200      0.068  -0.200   0
-cluster13             -0.516 0.111     -0.734   -0.516     -0.299  -0.516   0
-cluster14             -0.335 0.108     -0.548   -0.335     -0.122  -0.335   0
-cluster2              -0.194 0.124     -0.438   -0.194      0.051  -0.194   0
-cluster3              -0.413 0.093     -0.596   -0.413     -0.230  -0.413   0
-cluster4              -0.188 0.142     -0.469   -0.187      0.089  -0.187   0
-cluster5               0.870 0.196      0.480    0.871      1.248   0.871   0
-cluster7              -0.256 0.245     -0.737   -0.256      0.223  -0.256   0
-cluster8               0.060 0.140     -0.213    0.060      0.334   0.060   0
-cluster9              -0.237 0.094     -0.422   -0.237     -0.052  -0.237   0
-chronic_heat          -0.021 0.088     -0.193   -0.021      0.151  -0.021   0
-acute_heat             0.305 0.394     -0.467    0.305      1.077   0.305   0
-month6                 0.016 0.117     -0.216    0.016      0.245   0.016   0
-month7                 0.016 0.185     -0.342    0.015      0.383   0.015   0
-month8                 0.158 0.234     -0.295    0.156      0.624   0.156   0
-month9                 0.246 0.268     -0.277    0.245      0.775   0.245   0
-month10                0.254 0.303     -0.341    0.254      0.848   0.254   0
-day_of_weekMon         0.039 0.060     -0.079    0.039      0.158   0.039   0
-day_of_weekTue         0.025 0.060     -0.094    0.025      0.143   0.025   0
-day_of_weekWed         0.029 0.060     -0.089    0.029      0.146   0.029   0
-day_of_weekThu         0.059 0.060     -0.060    0.059      0.177   0.059   0
-day_of_weekFri        -0.003 0.061     -0.123   -0.003      0.116  -0.003   0
-day_of_weekSat        -0.006 0.061     -0.125   -0.006      0.114  -0.006   0
-cluster1:acute_heat    0.025 0.068     -0.108    0.025      0.159   0.025   0
-cluster10:acute_heat  -0.027 0.108     -0.238   -0.027      0.184  -0.027   0
-cluster11:acute_heat  -0.015 0.073     -0.158   -0.015      0.127  -0.015   0
-cluster12:acute_heat  -0.035 0.120     -0.270   -0.035      0.200  -0.035   0
-cluster13:acute_heat   0.036 0.081     -0.123    0.036      0.195   0.036   0
-cluster14:acute_heat   0.011 0.083     -0.151    0.011      0.174   0.011   0
-cluster2:acute_heat   -0.054 0.090     -0.231   -0.054      0.123  -0.054   0
-cluster3:acute_heat    0.045 0.071     -0.095    0.045      0.184   0.045   0
-cluster4:acute_heat   -0.016 0.111     -0.233   -0.016      0.201  -0.016   0
-cluster5:acute_heat    0.055 0.154     -0.247    0.055      0.357   0.055   0
-cluster7:acute_heat   -0.104 0.272     -0.636   -0.104      0.429  -0.104   0
-cluster8:acute_heat    0.122 0.115     -0.104    0.122      0.347   0.122   0
-cluster9:acute_heat   -0.031 0.071     -0.170   -0.031      0.107  -0.031   0
+                  mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -11.318 0.196    -11.701  -11.318    -10.935 -11.318   0
+cluster1        -0.485 0.085     -0.652   -0.485     -0.318  -0.485   0
+cluster10       -0.514 0.155     -0.818   -0.514     -0.209  -0.514   0
+cluster11       -0.214 0.098     -0.406   -0.214     -0.022  -0.214   0
+cluster12       -0.196 0.136     -0.461   -0.196      0.071  -0.196   0
+cluster13       -0.515 0.110     -0.731   -0.515     -0.299  -0.515   0
+cluster14       -0.337 0.108     -0.548   -0.337     -0.125  -0.337   0
+cluster2        -0.194 0.124     -0.437   -0.194      0.049  -0.194   0
+cluster3        -0.413 0.093     -0.595   -0.413     -0.231  -0.413   0
+cluster4        -0.193 0.139     -0.467   -0.193      0.078  -0.193   0
+cluster5         0.869 0.189      0.495    0.869      1.239   0.869   0
+cluster7        -0.264 0.243     -0.742   -0.263      0.213  -0.263   0
+cluster8         0.062 0.139     -0.210    0.062      0.334   0.062   0
+cluster9        -0.240 0.094     -0.424   -0.240     -0.056  -0.240   0
+chronic_heat    -0.017 0.088     -0.190   -0.017      0.155  -0.017   0
+month6           0.021 0.117     -0.209    0.021      0.249   0.021   0
+month7           0.027 0.183     -0.331    0.027      0.387   0.027   0
+month8           0.166 0.230     -0.284    0.165      0.619   0.165   0
+month9           0.253 0.266     -0.267    0.253      0.776   0.253   0
+month10          0.253 0.301     -0.337    0.253      0.844   0.253   0
+day_of_weekMon   0.042 0.060     -0.076    0.042      0.160   0.042   0
+day_of_weekTue   0.026 0.060     -0.092    0.026      0.144   0.026   0
+day_of_weekWed   0.028 0.060     -0.089    0.028      0.145   0.028   0
+day_of_weekThu   0.061 0.060     -0.058    0.061      0.179   0.061   0
+day_of_weekFri   0.001 0.061     -0.118    0.001      0.120   0.001   0
+day_of_weekSat  -0.006 0.061     -0.125   -0.006      0.113  -0.006   0
 
 Linear combinations (derived):
-                             ID  mean    sd 0.025quant 0.5quant 0.975quant
-cluster6                      1 0.305 0.394     -0.467    0.305      1.077
-cluster1                      2 0.330 0.394     -0.443    0.330      1.103
-cluster10                     3 0.278 0.405     -0.517    0.278      1.073
-cluster11                     4 0.290 0.395     -0.485    0.290      1.064
-cluster12                     5 0.270 0.406     -0.527    0.270      1.066
-cluster13                     6 0.340 0.396     -0.436    0.340      1.117
-cluster14                     7 0.316 0.395     -0.460    0.316      1.091
-cluster2                      8 0.251 0.397     -0.528    0.251      1.030
-cluster3                      9 0.350 0.394     -0.424    0.350      1.123
-cluster4                     10 0.289 0.403     -0.501    0.289      1.078
-cluster5                     11 0.359 0.417     -0.459    0.359      1.178
-cluster7                     12 0.201 0.472     -0.725    0.201      1.127
-cluster8                     13 0.426 0.405     -0.368    0.426      1.221
-cluster9                     14 0.273 0.395     -0.501    0.273      1.047
-heat_1SD_cluster1_cz29       15 0.196 0.075      0.046    0.197      0.342
-heat_1SD_cluster8_cz29       16 0.293 0.120      0.056    0.293      0.527
-heat_1SD_cluster7_czmissing  17 0.502 0.379     -0.240    0.502      1.244
-heat_1SD_cluster3_cz29       18 0.216 0.080      0.056    0.217      0.372
-heat_1SD_cluster7_cz29       19 0.067 0.274     -0.470    0.067      0.603
-heat_1SD_cluster12_cz29      20 0.136 0.126     -0.112    0.136      0.382
-heat_1SD_cluster2_cz29       21 0.117 0.101     -0.081    0.118      0.313
-heat_1SD_cluster6_cz29       22 0.171 0.082      0.008    0.172      0.330
-heat_1SD_cluster11_cz29      23 0.156 0.086     -0.014    0.156      0.323
-heat_1SD_cluster12_cz28      24 0.175 0.126     -0.072    0.175      0.422
-heat_1SD_cluster9_cz29       25 0.139 0.082     -0.023    0.140      0.299
-heat_1SD_cluster6_cz28       26 0.210 0.081      0.051    0.210      0.368
-heat_1SD_cluster11_cz28      27 0.195 0.081      0.036    0.195      0.353
-heat_1SD_cluster13_cz29      28 0.207 0.093      0.022    0.207      0.389
-heat_1SD_cluster7_cz28       29 0.106 0.276     -0.436    0.106      0.648
-heat_1SD_cluster14_cz29      30 0.182 0.093     -0.001    0.182      0.363
-heat_1SD_cluster13_cz28      31 0.246 0.087      0.075    0.246      0.417
-heat_1SD_cluster9_cz28       32 0.179 0.080      0.022    0.179      0.335
-heat_1SD_cluster12_czmissing 33 0.571 0.377     -0.169    0.571      1.310
-heat_1SD_cluster4_cz29       34 0.155 0.119     -0.079    0.155      0.387
-heat_1SD_cluster14_cz30      35 0.149 0.112     -0.073    0.149      0.366
-heat_1SD_cluster11_cz30      36 0.122 0.105     -0.086    0.123      0.326
-heat_1SD_cluster14_cz28      37 0.221 0.090      0.044    0.221      0.398
-heat_1SD_cluster6_cz30       38 0.138 0.111     -0.082    0.139      0.352
-heat_1SD_cluster2_cz28       39 0.156 0.095     -0.031    0.156      0.344
-heat_1SD_cluster6_czmissing  40 0.606 0.377     -0.134    0.607      1.346
-heat_1SD_cluster3_cz28       41 0.255 0.081      0.096    0.255      0.414
-heat_1SD_cluster8_cz28       42 0.332 0.123      0.091    0.332      0.572
-heat_1SD_cluster4_cz30       43 0.121 0.129     -0.132    0.122      0.373
-heat_1SD_cluster4_cz28       44 0.194 0.116     -0.034    0.194      0.422
-heat_1SD_cluster9_cz30       45 0.106 0.100     -0.094    0.107      0.301
-heat_1SD_cluster1_cz28       46 0.236 0.082      0.074    0.236      0.397
-heat_1SD_cluster3_cz30       47 0.183 0.110     -0.037    0.183      0.397
-heat_1SD_cluster10_cz28      48 0.183 0.114     -0.040    0.183      0.406
-heat_1SD_cluster10_cz29      49 0.144 0.115     -0.083    0.144      0.369
-heat_1SD_cluster6_cz22       50 0.146 0.149     -0.149    0.147      0.436
-heat_1SD_cluster4_cz22       51 0.130 0.112     -0.093    0.131      0.346
-heat_1SD_cluster5_cz22       52 0.201 0.176     -0.146    0.201      0.545
-heat_1SD_cluster5_cz30       53 0.192 0.157     -0.116    0.193      0.499
-heat_1SD_cluster5_cz20       54 0.005 0.269     -0.534    0.008      0.522
-heat_1SD_cluster7_cz22       55 0.042 0.302     -0.550    0.042      0.633
-heat_1SD_cluster9_cz22       56 0.114 0.143     -0.168    0.115      0.392
-                              mode kld
-cluster6                     0.305   0
-cluster1                     0.330   0
-cluster10                    0.278   0
-cluster11                    0.290   0
-cluster12                    0.270   0
-cluster13                    0.340   0
-cluster14                    0.316   0
-cluster2                     0.251   0
-cluster3                     0.350   0
-cluster4                     0.289   0
-cluster5                     0.359   0
-cluster7                     0.201   0
-cluster8                     0.426   0
-cluster9                     0.273   0
-heat_1SD_cluster1_cz29       0.197   0
-heat_1SD_cluster8_cz29       0.293   0
-heat_1SD_cluster7_czmissing  0.502   0
-heat_1SD_cluster3_cz29       0.217   0
-heat_1SD_cluster7_cz29       0.067   0
-heat_1SD_cluster12_cz29      0.136   0
-heat_1SD_cluster2_cz29       0.118   0
-heat_1SD_cluster6_cz29       0.172   0
-heat_1SD_cluster11_cz29      0.156   0
-heat_1SD_cluster12_cz28      0.175   0
-heat_1SD_cluster9_cz29       0.140   0
-heat_1SD_cluster6_cz28       0.210   0
-heat_1SD_cluster11_cz28      0.195   0
-heat_1SD_cluster13_cz29      0.207   0
-heat_1SD_cluster7_cz28       0.106   0
-heat_1SD_cluster14_cz29      0.182   0
-heat_1SD_cluster13_cz28      0.246   0
-heat_1SD_cluster9_cz28       0.179   0
-heat_1SD_cluster12_czmissing 0.571   0
-heat_1SD_cluster4_cz29       0.155   0
-heat_1SD_cluster14_cz30      0.149   0
-heat_1SD_cluster11_cz30      0.123   0
-heat_1SD_cluster14_cz28      0.221   0
-heat_1SD_cluster6_cz30       0.139   0
-heat_1SD_cluster2_cz28       0.156   0
-heat_1SD_cluster6_czmissing  0.607   0
-heat_1SD_cluster3_cz28       0.255   0
-heat_1SD_cluster8_cz28       0.332   0
-heat_1SD_cluster4_cz30       0.122   0
-heat_1SD_cluster4_cz28       0.194   0
-heat_1SD_cluster9_cz30       0.107   0
-heat_1SD_cluster1_cz28       0.236   0
-heat_1SD_cluster3_cz30       0.183   0
-heat_1SD_cluster10_cz28      0.183   0
-heat_1SD_cluster10_cz29      0.144   0
-heat_1SD_cluster6_cz22       0.147   0
-heat_1SD_cluster4_cz22       0.131   0
-heat_1SD_cluster5_cz22       0.201   0
-heat_1SD_cluster5_cz30       0.193   0
-heat_1SD_cluster5_cz20       0.008   0
-heat_1SD_cluster7_cz22       0.042   0
-heat_1SD_cluster9_cz22       0.116   0
+                             ID   mean    sd 0.025quant 0.5quant 0.975quant
+heat_1SD_cluster1_cz29        1  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster8_cz29        2  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster7_czmissing   3  0.624 0.351     -0.065    0.624      1.313
+heat_1SD_cluster3_cz29        4  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster7_cz29        5  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster12_cz29       6  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster2_cz29        7  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster6_cz29        8  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster11_cz29       9  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster12_cz28      10  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster9_cz29       11  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster6_cz28       12  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster11_cz28      13  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster13_cz29      14  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster7_cz28       15  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster14_cz29      16  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster13_cz28      17  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster9_cz28       18  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster12_czmissing 19  0.624 0.351     -0.065    0.624      1.313
+heat_1SD_cluster4_cz29       20  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster14_cz30      21  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster11_cz30      22  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster14_cz28      23  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster6_cz30       24  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster2_cz28       25  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster6_czmissing  26  0.624 0.351     -0.065    0.624      1.313
+heat_1SD_cluster3_cz28       27  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster8_cz28       28  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster4_cz30       29  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster4_cz28       30  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster9_cz30       31  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster1_cz28       32  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster3_cz30       33  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster10_cz28      34  0.209 0.064      0.082    0.209      0.335
+heat_1SD_cluster10_cz29      35  0.182 0.064      0.055    0.182      0.307
+heat_1SD_cluster6_cz22       36  0.127 0.108     -0.087    0.127      0.338
+heat_1SD_cluster4_cz22       37  0.127 0.108     -0.087    0.127      0.338
+heat_1SD_cluster5_cz22       38  0.127 0.108     -0.087    0.127      0.338
+heat_1SD_cluster5_cz30       39  0.127 0.092     -0.054    0.127      0.307
+heat_1SD_cluster5_cz20       40 -0.007 0.263     -0.526   -0.006      0.506
+heat_1SD_cluster7_cz22       41  0.127 0.108     -0.087    0.127      0.338
+heat_1SD_cluster9_cz22       42  0.127 0.108     -0.087    0.127      0.338
+                               mode kld
+heat_1SD_cluster1_cz29        0.182   0
+heat_1SD_cluster8_cz29        0.182   0
+heat_1SD_cluster7_czmissing   0.624   0
+heat_1SD_cluster3_cz29        0.182   0
+heat_1SD_cluster7_cz29        0.182   0
+heat_1SD_cluster12_cz29       0.182   0
+heat_1SD_cluster2_cz29        0.182   0
+heat_1SD_cluster6_cz29        0.182   0
+heat_1SD_cluster11_cz29       0.182   0
+heat_1SD_cluster12_cz28       0.209   0
+heat_1SD_cluster9_cz29        0.182   0
+heat_1SD_cluster6_cz28        0.209   0
+heat_1SD_cluster11_cz28       0.209   0
+heat_1SD_cluster13_cz29       0.182   0
+heat_1SD_cluster7_cz28        0.209   0
+heat_1SD_cluster14_cz29       0.182   0
+heat_1SD_cluster13_cz28       0.209   0
+heat_1SD_cluster9_cz28        0.209   0
+heat_1SD_cluster12_czmissing  0.624   0
+heat_1SD_cluster4_cz29        0.182   0
+heat_1SD_cluster14_cz30       0.127   0
+heat_1SD_cluster11_cz30       0.127   0
+heat_1SD_cluster14_cz28       0.209   0
+heat_1SD_cluster6_cz30        0.127   0
+heat_1SD_cluster2_cz28        0.209   0
+heat_1SD_cluster6_czmissing   0.624   0
+heat_1SD_cluster3_cz28        0.209   0
+heat_1SD_cluster8_cz28        0.209   0
+heat_1SD_cluster4_cz30        0.127   0
+heat_1SD_cluster4_cz28        0.209   0
+heat_1SD_cluster9_cz30        0.127   0
+heat_1SD_cluster1_cz28        0.209   0
+heat_1SD_cluster3_cz30        0.127   0
+heat_1SD_cluster10_cz28       0.209   0
+heat_1SD_cluster10_cz29       0.182   0
+heat_1SD_cluster6_cz22        0.127   0
+heat_1SD_cluster4_cz22        0.127   0
+heat_1SD_cluster5_cz22        0.127   0
+heat_1SD_cluster5_cz30        0.127   0
+heat_1SD_cluster5_cz20       -0.006   0
+heat_1SD_cluster7_cz22        0.127   0
+heat_1SD_cluster9_cz22        0.127   0
 
 Random effects:
   Name	  Model
@@ -167,36 +125,36 @@ Random effects:
    zip_id IID model
 
 Model hyperparameters:
-                                                          mean      sd
-size for the nbinomial observations (1/overdispersion)   0.103   0.002
-Precision for doy                                      295.308 864.272
-Precision for acute_heat_rw2_shared                     23.281  14.137
-Precision for acute_heat_rw2_dev                       282.521 739.957
-GroupRho for acute_heat_rw2_dev                          0.024   0.047
-Precision for zip_id                                    13.222   2.364
+                                                          mean     sd
+size for the nbinomial observations (1/overdispersion)   0.103  0.002
+Precision for doy                                      117.320 68.567
+Precision for acute_heat_rw2_shared                     23.344  8.259
+Precision for acute_heat_rw2_dev                       100.019 43.907
+GroupRho for acute_heat_rw2_dev                          0.021  0.047
+Precision for zip_id                                    13.174  2.195
                                                        0.025quant 0.5quant
-size for the nbinomial observations (1/overdispersion)      0.099    0.103
-Precision for doy                                           5.068   94.867
-Precision for acute_heat_rw2_shared                         7.799   19.683
-Precision for acute_heat_rw2_dev                            7.657  102.562
-GroupRho for acute_heat_rw2_dev                            -0.052    0.019
-Precision for zip_id                                        9.682   12.876
+size for the nbinomial observations (1/overdispersion)      0.100    0.103
+Precision for doy                                          43.422   99.801
+Precision for acute_heat_rw2_shared                        10.796   22.125
+Precision for acute_heat_rw2_dev                           32.755   93.539
+GroupRho for acute_heat_rw2_dev                            -0.054    0.016
+Precision for zip_id                                        9.540   12.945
                                                        0.975quant   mode
 size for the nbinomial observations (1/overdispersion)      0.107  0.103
-Precision for doy                                        1844.917 10.370
-Precision for acute_heat_rw2_shared                        60.711 14.449
-Precision for acute_heat_rw2_dev                         1698.437 17.866
-GroupRho for acute_heat_rw2_dev                             0.132  0.003
-Precision for zip_id                                       18.879 11.911
+Precision for doy                                         299.750 73.541
+Precision for acute_heat_rw2_shared                        42.890 19.887
+Precision for acute_heat_rw2_dev                          200.269 79.260
+GroupRho for acute_heat_rw2_dev                             0.129 -0.002
+Precision for zip_id                                       18.153 12.406
 
-Deviance Information Criterion (DIC) ...............: 65207.33
-Deviance Information Criterion (DIC, saturated) ....: -403349.35
-Effective number of parameters .....................: 203.47
+Deviance Information Criterion (DIC) ...............: 65217.11
+Deviance Information Criterion (DIC, saturated) ....: -406992.32
+Effective number of parameters .....................: 188.45
 
-Watanabe-Akaike information criterion (WAIC) ...: 65254.86
-Effective number of parameters .................: 235.73
+Watanabe-Akaike information criterion (WAIC) ...: 65260.35
+Effective number of parameters .................: 218.83
 
-Marginal log-Likelihood:  -34524.17 
+Marginal log-Likelihood:  -34464.58 
  is computed 
 Posterior summaries for the linear predictor and the fitted values are computed
 (Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')

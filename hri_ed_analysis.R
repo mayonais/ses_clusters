@@ -1,5 +1,5 @@
-# Preserve the saved climate_zone_added predictor while changing the likelihood,
-# adding a ZIP intercept, correlating zone deviations, and using PC hyperpriors.
+# NB climate-zone model with ZIP iid and PC hyperpriors. Acute heat enters only
+# through the shared and correlated zone RW2 curves, without linear SES slopes.
 # Run: Rscript hri_ed_analysis.R --preflight
 # Run: Rscript hri_ed_analysis.R --fit-only
 # Run: Rscript hri_ed_analysis.R --outputs-only  (reuse the saved fit)
@@ -64,6 +64,28 @@ exchangeable_pc_prior <- function(K, u = 0.5, alpha = 0.1) {
       support = c(-1 / (K - 1), 1), internal_table_bounds = range(theta)))
 }
 
+load_shared_heat_inputs <- function(input_dir = "Los_Angeles_discrete_none") {
+  source("shared_functions.R", local = TRUE)
+  files <- c(layout = file.path(input_dir, "heat_model_layout.rds"),
+    grid = file.path(input_dir, "heat_grid.rds"))
+  if (!all(file.exists(files))) stop("Missing shared heat input: ",
+    paste(files[!file.exists(files)], collapse = ", "))
+  layout <- readRDS(files[["layout"]])
+  grid <- readRDS(files[["grid"]])
+  stopifnot(identical(layout$schema_version, 1L), identical(grid$schema_version, 1L),
+    !"D2" %in% names(layout$data), "D2" %in% layout$data_columns,
+    identical(setdiff(layout$data_columns, "D2"), names(layout$data)),
+    identical(layout$row_layout_md5, grid$row_layout_md5),
+    identical(heat_object_md5(layout$data[c("zip", "date")]), layout$row_layout_md5),
+    nrow(layout$data) == length(layout$exposure), length(layout$fixed_names) == 26L,
+    !any(grepl("acute_heat", layout$fixed_names)),
+    isTRUE(grid$nonlinear_heat$pooled), length(grid$nonlinear_heat$grid) == 50L,
+    length(grid$nonlinear_heat$zone) == nrow(layout$data),
+    length(grid$nonlinear_heat$observed_index) == nrow(layout$data))
+  list(layout = layout, nonlinear_heat = grid$nonlinear_heat, files = files,
+    md5 = setNames(unname(tools::md5sum(files)), names(files)))
+}
+
 preserved_nb_inputs <- function(precision_prior = list(prior = "pc.prec", param = c(1, 0.01))) {
   stopifnot(precision_prior$prior %in% c("pc.prec", "loggamma"),
     length(precision_prior$param) == 2L, all(is.finite(precision_prior$param)),
@@ -72,22 +94,18 @@ preserved_nb_inputs <- function(precision_prior = list(prior = "pc.prec", param 
   library(dplyr)
   source("shared_functions.R")
   source("cluster_ar.R")
-  source_model <- paste0("Los_Angeles_discrete_none/climate_zone_added/",
-    "Los_Angeles_discrete_none_HEAT_by_cluster_suppressed_INLA_poisson_model.rds")
-  old <- readRDS(source_model)
-  data <- old$.args$data
-  meta <- old$nonlinear_heat
-  fixed_formula <- heat_fixed_formula(old$.args$formula)
-  old_design <- model.matrix(fixed_formula, data)
-  stopifnot(identical(old$.args$family, "poisson"),
-    identical(colnames(old_design), old$names.fixed),
-    "acute_heat" %in% colnames(old_design),
-    sum(grepl("cluster.*:acute_heat|acute_heat:cluster", colnames(old_design))) == 13L,
-    isTRUE(meta$pooled), length(meta$grid) == 50L)
-  # Keep the original rows, factor contrasts, offset, heat grid, and exposures.
+  shared <- load_shared_heat_inputs()
+  layout <- shared$layout
+  data <- layout$data
+  meta <- shared$nonlinear_heat
+  fixed_formula <- layout$fixed_formula
+  # Keep rows, contrasts, offsets and the heat grid, but use reconstructed counts
+  # from suppressed_data.R, including the one-visit all-zero-month override.
   prepared <- load_heat_data("Los_Angeles_discrete_none")
-  for (field in names(prepared$daily_ed))
+  for (field in setdiff(names(prepared$daily_ed), "D2"))
     stopifnot(isTRUE(all.equal(data[[field]], prepared$daily_ed[[field]], check.attributes = FALSE)))
+  data$D2 <- prepared$daily_ed$D2
+  data <- data[layout$data_columns]
   data$zip_id <- match(as.character(data$zip), sort(unique(as.character(data$zip))))
   data$climate_zone_group <- match(meta$zone, meta$zone_levels)
   data$climate_zone_group[is.na(meta$zone)] <- 1L
@@ -97,9 +115,9 @@ preserved_nb_inputs <- function(precision_prior = list(prior = "pc.prec", param 
     (head(meta$grid, -1L) + tail(meta$grid, -1L)) / 2) + 1L
   data$acute_heat_rw2_cf <- meta$counterfactual_index
   meta$ar_reference <- "SES-cluster-month mean heat"
-  meta$ses_heat_slopes <- meta$common_heat_slope <- TRUE
+  meta$ses_heat_slopes <- meta$common_heat_slope <- FALSE
   meta$group_model <- "exchangeable"
-  meta$model_variant <- "climate_zone_added_nb_pc"
+  meta$model_variant <- "climate_zone_added_nb_pc_no_linear_heat_slopes"
   correlation <- exchangeable_pc_prior(length(meta$zone_levels))
   formula_env <- new.env(parent = .GlobalEnv)
   formula_env$precision_hyper <- list(prec = precision_prior)
@@ -117,21 +135,24 @@ preserved_nb_inputs <- function(precision_prior = list(prior = "pc.prec", param 
   for (term in terms) rhs <- call("+", rhs, term)
   formula <- as.formula(call("~", as.name("D2"), rhs), env = formula_env)
   new_design <- model.matrix(heat_fixed_formula(formula), data)
-  stopifnot(identical(old_design, new_design),
-    identical(as.numeric(old$.args$E), as.numeric(data$Population)),
+  stopifnot(identical(colnames(new_design), layout$fixed_names),
+    identical(heat_object_md5(as.numeric(new_design)), layout$fixed_design_numeric_md5),
+    identical(attr(new_design, "contrasts"), layout$factor_contrasts),
+    ncol(new_design) == 26L,
+    identical(layout$exposure, as.numeric(data$Population)),
     length(unique(data$zip_id)) == 309L, nrow(data) == 54910L)
   result <- list(data = data, nonlinear_heat = meta, formula = formula,
     fixed_prior = list(mean = 0, prec = 0.001, mean.intercept = 0, prec.intercept = 0),
     family_prior = list(hyper = list(theta = list(prior = "pc.mgamma", param = 7))),
-    correlation = correlation, precision_prior = precision_prior, source_model = source_model,
-    source_md5 = unname(tools::md5sum(source_model)), reference_cluster = prepared$reference_cluster,
+    correlation = correlation, precision_prior = precision_prior, source_files = shared$files,
+    source_md5 = shared$md5, reference_cluster = prepared$reference_cluster,
     heat_sd_f = prepared$heat_sd, fixed_design_md5 = heat_object_md5(new_design))
-  message("Verified original climate_zone_added fixed design: 40 coefficients, including all 14 heat slopes.")
+  message("Verified 26 fixed coefficients: all 14 linear acute-heat slopes removed; other fixed effects retained.")
   result
 }
 
 fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zone_added_nb_pc",
-  fit_only = FALSE, preflight = FALSE,
+  fit_only = FALSE, preflight = FALSE, save_config = TRUE, restart_fit = FALSE,
   precision_prior = list(prior = "pc.prec", param = c(1, 0.01))) {
   inputs <- preserved_nb_inputs(precision_prior = precision_prior)
   full <- make_full_heat_lincombs(inputs$data, inputs$nonlinear_heat, inputs$formula)
@@ -140,12 +161,12 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
     precision = if (identical(precision_prior$prior, "pc.prec")) precision_prior$param else precision_prior,
     correlation = inputs$correlation$specification,
     fixed = inputs$fixed_prior, family = inputs$family_prior, source = inputs$source_md5,
-    INLA = as.character(packageVersion("INLA")), version = 1L)
+    INLA = as.character(packageVersion("INLA")), version = 3L)
   signature <- heat_object_md5(signature_inputs)
   if (preflight) {
     print(inputs$formula)
     print(inputs$correlation$specification)
-    message("Preflight passed: 54910 rows, 309 ZIPs, 14 SES heat slopes, 42 full-response contrasts.")
+    message("Preflight passed: 54910 rows, 309 ZIPs, no linear acute-heat slopes, 42 curve-only contrasts.")
     return(invisible(inputs))
   }
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -154,7 +175,16 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
   if (file.exists(signature_file) && file.exists(model_file))
     stopifnot(identical(readLines(signature_file), signature))
   writeLines(signature, signature_file)
-  if (!file.exists(model_file)) {
+  initial_mode <- list()
+  if (restart_fit) {
+    previous <- readRDS(model_file)
+    stopifnot(previous$mode$mode.status == 0L, identical(previous$.args$data, inputs$data))
+    initial_mode <- list(theta = previous$mode$theta, x = previous$mode$x,
+      restart = TRUE, fixed = FALSE)
+    rm(previous); gc(verbose = FALSE)
+    message("Restarting from the saved hyperparameter and latent modes; priors remain unchanged.")
+  }
+  if (!file.exists(model_file) || restart_fit) {
     lincombs <- c(make_heat_lincombs(inputs$data, inputs$formula), full$lincombs)
     gc(verbose = FALSE)
     message("Fitting preserved climate_zone_added NB model; precision prior: ",
@@ -162,15 +192,17 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
     elapsed <- system.time(fit <- INLA::inla(inputs$formula, family = "nbinomial",
       data = inputs$data, E = inputs$data$Population, control.fixed = inputs$fixed_prior,
       control.family = inputs$family_prior, lincomb = lincombs,
-      control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
+      control.mode = initial_mode,
+      control.compute = list(dic = TRUE, waic = TRUE, config = save_config),
       control.predictor = list(compute = TRUE), num.threads = "2:1", verbose = TRUE,
       working.directory = file.path(normalizePath(output_dir, winslash = "/", mustWork = TRUE),
         "inla_work")))[["elapsed"]]
     fit$nonlinear_heat <- inputs$nonlinear_heat
     fit$full_heat_irr <- full
-    fit$preserved_nb_specification <- list(source_model = inputs$source_model,
+    fit$preserved_nb_specification <- list(source_files = inputs$source_files,
       source_md5 = inputs$source_md5, fixed_design_md5 = inputs$fixed_design_md5,
-      correlation = inputs$correlation$specification, precision_prior = precision_prior, elapsed = elapsed)
+      correlation = inputs$correlation$specification, precision_prior = precision_prior, elapsed = elapsed,
+      restarted_from_saved_mode = restart_fit)
     stopifnot(fit$mode$mode.status == 0L, all(is.finite(fit$summary.fixed$mean)),
       all(is.finite(fit$summary.hyperpar$mean)),
       identical(fit$names.fixed, colnames(model.matrix(heat_fixed_formula(inputs$formula), inputs$data))))
@@ -203,8 +235,8 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
     sprintf("Four precision priors: Gamma(shape=%g, rate=%g), INLA loggamma on log precision.",
       precision_prior$param[1], precision_prior$param[2])
   writeLines(c("PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL PRIOR SPECIFICATION",
-    "Original 40 fixed coefficients retained, including common acute heat and 13 SES interactions.",
-    "Same original rows, population offset, 50-node heat grid, scaling, and RW2 sum-to-zero constraints.",
+    "26 fixed coefficients: common acute heat and all 13 SES heat interactions removed.",
+    "Original rows, population offset, 50-node heat grid, scaling and RW2 sum-to-zero constraints retained; reconstructed counts updated.",
     "Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.",
     precision_description,
     "Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.",
@@ -212,8 +244,9 @@ fit_preserved_nb <- function(output_dir = "Los_Angeles_discrete_none/climate_zon
     "NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.",
     if (fit_only) "Fit-only summaries: no excess-rate posterior draws generated." else
       "Excess-rate reference: SES-cluster-month mean heat; equal ZIP-day weighting; 2000 posterior draws.",
-    paste("Source model MD5:", inputs$source_md5),
-    paste("Original and restored fixed-design MD5:", inputs$fixed_design_md5),
+    paste("Shared input:", inputs$source_files),
+    paste("Shared input MD5:", names(inputs$source_md5), inputs$source_md5),
+    paste("Reduced fixed-design MD5:", inputs$fixed_design_md5),
     paste("INLA version:", packageVersion("INLA")), paste("R version:", R.version.string)),
     file.path(output_dir, "priors.txt"))
   rm(fit, inputs); gc(verbose = FALSE)
@@ -271,19 +304,36 @@ validate_nb_pc_model <- function(
   check("Five-zone correlation density agrees with matrix determinant and numerical Jacobian",
     max(abs(direct_logp - table_logp)) < 1e-5, max(abs(direct_logp - table_logp)))
 
-  source_model <- fit$preserved_nb_specification$source_model
-  old <- readRDS(source_model)
-  old_design <- model.matrix(heat_fixed_formula(old$.args$formula), old$.args$data)
+  shared <- load_shared_heat_inputs()
+  layout <- shared$layout
+  check("Shared input provenance matches the fitted model",
+    identical(fit$preserved_nb_specification$source_files, shared$files) &&
+      identical(fit$preserved_nb_specification$source_md5, shared$md5))
   new_design <- model.matrix(heat_fixed_formula(fit$.args$formula), fit$.args$data)
-  check("Original fixed design and all 14 SES heat slopes preserved",
-    identical(old_design, new_design) && identical(fit$names.fixed, old$names.fixed),
+  has_linear_heat <- "acute_heat" %in% fit$names.fixed
+  check("All 14 linear heat slopes removed; shared fixed design preserved",
+    !has_linear_heat && identical(colnames(new_design), layout$fixed_names) &&
+      identical(heat_object_md5(as.numeric(new_design)), layout$fixed_design_numeric_md5) &&
+      identical(attr(new_design, "contrasts"), layout$factor_contrasts) &&
+      identical(fit$names.fixed, layout$fixed_names),
     list(coefficients = ncol(new_design), observations = nrow(new_design)))
-  check("Original population offsets and heat grid preserved",
-    identical(as.numeric(fit$.args$E), as.numeric(old$.args$E)) &&
-      identical(fit$nonlinear_heat$grid, old$nonlinear_heat$grid))
+  check("Shared ZIP/date row order preserved",
+    identical(fit$.args$data[c("zip", "date")], layout$data[c("zip", "date")]))
+  if (!has_linear_heat) {
+    prepared <- load_heat_data("Los_Angeles_discrete_none")
+    check("Fitted counts match the current suppressed-count reconstruction",
+      identical(as.numeric(fit$.args$data$D2), as.numeric(prepared$daily_ed$D2)))
+    check("Linear heat metadata disabled",
+      identical(fit$nonlinear_heat$ses_heat_slopes, FALSE) &&
+        identical(fit$nonlinear_heat$common_heat_slope, FALSE))
+    rm(prepared)
+  }
+  check("Shared population offsets and heat grid preserved",
+    identical(as.numeric(fit$.args$E), layout$exposure) &&
+      identical(fit$nonlinear_heat$grid, shared$nonlinear_heat$grid))
   check("Negative-binomial likelihood and converged mode",
     identical(fit$.args$family, "nbinomial") && fit$mode$mode.status == 0L)
-  rm(old, old_design, new_design); gc(verbose = FALSE)
+  rm(shared, layout, new_design); gc(verbose = FALSE)
 
   # Check the Gaussian backend used for excess-rate sampling against the saved
   # INLA conditional variances at three distinct posterior configurations.
@@ -330,15 +380,15 @@ validate_nb_pc_model <- function(
       c("IRR_median", "IRR_lower", "IRR_upper", "P_IRR_gt_1")]))) &&
       all(results$heat$IRR_lower > 0) && all(results$heat$P_IRR_gt_1 >= 0 & results$heat$P_IRR_gt_1 <= 1))
 
-  # Independently check every saved linear-combination coefficient, including the
-  # formerly omitted SES interaction and the signs/zone offsets of curve nodes.
+  # Independently check every saved linear-combination coefficient. Historical
+  # fits include fixed slopes; the current fit uses only shared/zone curve nodes.
   grid <- fit$nonlinear_heat$grid
   nodes <- findInterval(c(0, 1), (head(grid, -1L) + tail(grid, -1L)) / 2) + 1L
   weights_match <- vapply(seq_len(nrow(results$heat)), function(i) {
     row <- results$heat[i, ]
-    expected <- c("acute_heat:1" = 1,
+    expected <- c(if (has_linear_heat) c("acute_heat:1" = 1),
       setNames(c(-1, 1), paste0("acute_heat_rw2_shared:", nodes)))
-    if (row$cluster != levels(fit$.args$data$cluster)[1L])
+    if (paste0("cluster", row$cluster, ":acute_heat") %in% fit$names.fixed)
       expected <- c(expected, setNames(1, paste0("cluster", row$cluster, ":acute_heat:1")))
     if (!is.na(row$climate_zone)) {
       zone <- match(row$climate_zone, fit$nonlinear_heat$zone_levels)
@@ -353,7 +403,7 @@ validate_nb_pc_model <- function(
     }), use.names = TRUE)
     identical(expected[order(names(expected))], actual[order(names(actual))])
   }, logical(1))
-  check("All 42 saved contrasts have exact SES, shared-curve and zone-curve weights", all(weights_match))
+  check("All 42 saved contrasts match the fitted fixed terms and shared/zone curves", all(weights_match))
 
   # Separately approximated INLA marginal means need not commute exactly with
   # linear combinations. Record the discrepancy as a numerical diagnostic rather
@@ -363,7 +413,7 @@ validate_nb_pc_model <- function(
   dev_mean <- fit$summary.random$acute_heat_rw2_dev$mean
   reconstructed <- vapply(seq_len(nrow(results$heat)), function(i) {
     row <- results$heat[i, ]
-    slope <- fixed_mean[["acute_heat"]]
+    slope <- if (has_linear_heat) fixed_mean[["acute_heat"]] else 0
     interaction <- paste0("cluster", row$cluster, ":acute_heat")
     if (interaction %in% names(fixed_mean)) slope <- slope + fixed_mean[[interaction]]
     value <- slope + diff(shared_mean[nodes])
@@ -429,13 +479,6 @@ export_preserved_nb_outputs <- function(
   model_file <- file.path(results_dir, "nbinomial_model.rds")
   stopifnot(file.exists(model_file), file.exists(file.path(results_dir, "summaries.rds")))
   run_saved_heat_excess_rates(source_model = model_file, output_dir = results_dir)
-  # Preserve the older exports once before replacing them with corrected maps.
-  backup_dir <- file.path(map_dir, "previous_no_ses_slopes")
-  if (!dir.exists(backup_dir)) {
-    dir.create(backup_dir, recursive = TRUE, showWarnings = FALSE)
-    previous <- list.files(map_dir, pattern = "\\.(png|pdf)$", full.names = TRUE)
-    if (length(previous)) stopifnot(all(file.copy(previous, backup_dir)))
-  }
   # Load only the map function, without executing historical default exports.
   map_environment <- new.env(parent = environment())
   eval(parse("acute_heat_irr_maps.R")[[1L]], envir = map_environment)
@@ -443,7 +486,7 @@ export_preserved_nb_outputs <- function(
   validate_preserved_nb(results_dir = results_dir, with_maps = TRUE, map_dir = map_dir)
 }
 
-run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb") {
+run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb", restart_scenarios = character()) {
   # Vary the four precision priors jointly; preserve every other model choice.
   # Fit-only comparison: no excess-rate posterior sampling.
   # The saved current fit is the exact baseline and is reused without changing it.
@@ -452,6 +495,7 @@ run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb") {
     pc_stronger = list(prior = "pc.prec", param = c(0.5, 0.01)),
     pc_weaker = list(prior = "pc.prec", param = c(2, 0.01)),
     gamma_comparison = list(prior = "loggamma", param = c(1, 0.00005)))
+  stopifnot(all(restart_scenarios %in% names(scenarios)))
   baseline_dir <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc"
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   baseline_output <- file.path(output_dir, "pc_baseline")
@@ -468,6 +512,8 @@ run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb") {
     message("CORRECTED MODEL PRIOR SENSITIVITY: ", scenario)
     scenario_dir <- file.path(output_dir, scenario)
     summaries[[scenario]] <- fit_preserved_nb(output_dir = scenario_dir, fit_only = TRUE,
+      save_config = identical(scenario, "pc_baseline"),
+      restart_fit = scenario %in% restart_scenarios,
       precision_prior = scenarios[[scenario]])
     validate_preserved_nb(results_dir = scenario_dir, with_maps = FALSE,
       with_excess_rates = FALSE, check_sampling = FALSE, precision_prior = scenarios[[scenario]])
@@ -519,7 +565,7 @@ run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb") {
   write.csv(heat, file.path(output_dir, "heat_contrasts.csv"), row.names = FALSE)
   write.csv(clusters, file.path(output_dir, "conditional_cluster_irrs.csv"), row.names = FALSE)
   report <- c("CORRECTED NEGATIVE-BINOMIAL PRIOR SENSITIVITY", "",
-    "All four scenarios retain the common heat slope and all 13 SES heat interactions.",
+    "All four scenarios exclude the common heat slope and all 13 SES heat interactions.",
     "Identical 54,910 observations, 309 ZIPs, offsets, 50-node grid, fixed priors, NB size prior and PC correlation prior.",
     "Only the four random-effect precision priors vary, jointly:",
     "pc_baseline: P(SD > 1) = 0.01; exact current fit reused.",
@@ -530,7 +576,7 @@ run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb") {
     "Smaller WAIC/DIC is preferred by those criteria. Changes compare posterior point summaries.",
     "Probability changes are percentage points, using INLA full-contrast marginals.",
     "This comparison is fit-only: no excess-rate posterior draws are generated.",
-    "Existing baseline and stronger-prior draws are retained but are not used in this comparison.",
+    "The main baseline's excess-rate draws are preserved; no draws are created or used in these comparisons.",
     "RW2 precision controls curvature, not unpenalized linear trends; interpret complete heat contrasts.",
     "These results assess the listed joint precision-prior changes, not every possible prior choice.", "",
     capture.output(print(metrics, row.names = FALSE, digits = 6)), "",
@@ -541,8 +587,8 @@ run_nb_prior_sensitivity <- function(output_dir = "prior_sensitivity_nb") {
     c("", readLines(file.path(output_dir, paste0(scenario, "_prior_results.txt"))))))),
     file.path(output_dir, "prior_results.txt"))
   jsonlite::write_json(list(status = "completed", scenarios = scenarios,
-    invariants_identical = TRUE, observations = 54910L, ZIPs = 309L, fixed_coefficients = 40L,
-    SES_heat_slopes = 14L, full_heat_contrasts_per_scenario = 42L,
+    invariants_identical = TRUE, observations = 54910L, ZIPs = 309L, fixed_coefficients = 26L,
+    SES_heat_slopes = 0L, full_heat_contrasts_per_scenario = 42L,
     posterior_sampling = FALSE, newly_generated_excess_draws = 0L, baseline_reused = TRUE,
     current_model_md5 = unname(tools::md5sum(file.path(baseline_dir, "nbinomial_model.rds")))),
     file.path(output_dir, "sensitivity_validation.json"), pretty = TRUE, auto_unbox = TRUE, digits = 16)
@@ -628,7 +674,7 @@ run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/cl
     message("Reading the saved NB fit once; extracting matched inputs and zero diagnostics.")
     baseline <- readRDS(baseline_file)
     stopifnot(identical(baseline$.args$family, "nbinomial"), baseline$mode$mode.status == 0L,
-      length(baseline$names.fixed) == 40L)
+      length(baseline$names.fixed) == 26L)
     # INLA strips the saved formula environment; recreate its two named priors
     # and verify them against the priors recorded in the fitted baseline.
     precision_hyper <- list(prec = list(prior = "pc.prec", param = c(1, 0.01)))
@@ -699,7 +745,7 @@ run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/cl
   after <- tools::md5sum(protected)
   stopifnot(identical(before, after))
   jsonlite::write_json(list(status = "completed", observations = nrow(nb$rows),
-    ZIPs = length(unique(nb$rows$zip)), fixed_coefficients = 40L,
+    ZIPs = length(unique(nb$rows$zip)), fixed_coefficients = 26L,
     identical_predictor_data_exposure_and_common_priors = TRUE, baseline_reused = TRUE,
     protected_files_unchanged = TRUE, protected_file_count = length(before),
     baseline_model_md5 = unname(tools::md5sum(baseline_file)),
@@ -709,7 +755,7 @@ run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/cl
     file.path(output_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE, digits = 16)
   writeLines(c("MATCHED POISSON VERSUS CURRENT BASELINE NEGATIVE BINOMIAL", "",
     "The exact current NB fit is reused. Only the count likelihood changes in the Poisson fit.",
-    "Same 54,910 observations, offsets, 40 fixed coefficients, ZIP iid, shared/zone RW2 and exchangeable group prior.",
+    "Same 54,910 observations, offsets, 26 fixed coefficients, ZIP iid, shared/zone RW2 and exchangeable group prior.",
     "Fixed Normal priors and four PC precision priors are unchanged; Poisson has no NB size parameter.",
     "Both fits use INLA's default approximation/integration settings and two outer threads.",
     "The Poisson fit skips saved joint-sampling configurations and derived heat contrasts; these are not needed for the requested diagnostics.",
@@ -727,7 +773,7 @@ run_likelihood_comparison <- function(output_dir = "Los_Angeles_discrete_none/cl
   invisible(comparison)
 }
 
-run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/coefficient_variance") {
+run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance") {
   suppressPackageStartupMessages(library(INLA))
   source("shared_functions.R")
   baseline_dir <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc"
@@ -757,7 +803,7 @@ run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/coeff
       family_prior = list(hyper = list(theta = list(prior = "pc.mgamma", param = 7))),
       nonlinear_heat = baseline$nonlinear_heat, names_fixed = baseline$names.fixed,
       baseline_md5 = unname(tools::md5sum(baseline_file)), INLA_version = as.character(packageVersion("INLA")))
-    stopifnot(length(inputs$names_fixed) == 40L, nrow(inputs$data) == 54910L,
+    stopifnot(length(inputs$names_fixed) == 26L, nrow(inputs$data) == 54910L,
       identical(as.numeric(inputs$exposure), as.numeric(inputs$data$Population)))
     for (term in baseline$all.hyper$fixed) stopifnot(term$prior.mean == 0,
       term$prior.prec == if (term$label == "(Intercept)") 0 else 0.001)
@@ -839,7 +885,7 @@ run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/coeff
     capture.output(summary(fit), file = file.path(scenario_dir, "diagnostics.txt"))
     capture.output(str(fit$all.hyper, max.level = 6), file = file.path(scenario_dir, "fitted_priors.txt"))
     jsonlite::write_json(list(status = "completed", coefficient_variance = variance, mode_status = fit$mode$mode.status,
-      fixed_coefficients = 40L, changed_non_intercept_priors = 39L, PC_priors_unchanged = TRUE,
+      fixed_coefficients = 26L, changed_non_intercept_priors = 25L, PC_priors_unchanged = TRUE,
       data_predictor_and_exposure_unchanged = TRUE, full_heat_contrasts = 42L, newly_generated_excess_rate_draws = 0L),
       file.path(scenario_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE)
     summaries[[scenario]] <- result
@@ -877,7 +923,7 @@ run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/coeff
     file.path(output_dir, "validation.json"), pretty = TRUE, auto_unbox = TRUE, digits = 16)
   writeLines(c("NB COEFFICIENT-PRIOR VARIANCE SENSITIVITY", "",
     "Variance 1000 is the exact saved baseline; only variances 100 and 10 are newly fitted.",
-    "Only the Normal variances of the 39 non-intercept fixed coefficients change; prior means remain zero.",
+    "Only the Normal variances of the 25 non-intercept fixed coefficients change; prior means remain zero.",
     "The flat intercept, four PC precision priors, exchangeable PC correlation and PC NB-size priors are unchanged.",
     "Same observations, population exposures, heat grid, SES interactions and ZIP iid intercept.",
     "No posterior draws or maps are generated. Baseline results, current maps and methods are hash-verified unchanged.",
@@ -888,10 +934,10 @@ run_coefficient_sensitivity <- function(output_dir = "prior_sensitivity_nb/coeff
   invisible(comparison)
 }
 
-rerun_coefficient_variance_100 <- function(output_dir = "prior_sensitivity_nb/coefficient_variance/variance_100_rerun") {
+rerun_coefficient_variance_100 <- function(output_dir = "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance/variance_100_rerun") {
   suppressPackageStartupMessages(library(INLA))
   source("shared_functions.R")
-  comparison_dir <- "prior_sensitivity_nb/coefficient_variance"
+  comparison_dir <- "prior_sensitivity_nb/no_linear_heat_slopes/coefficient_variance"
   original_dir <- file.path(comparison_dir, "variance_100")
   original_file <- file.path(original_dir, "nbinomial_model.rds")
   baseline_dir <- "Los_Angeles_discrete_none/climate_zone_added_nb_pc"

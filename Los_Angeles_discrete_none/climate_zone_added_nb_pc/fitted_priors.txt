@@ -50,7 +50,7 @@ List of 4
   .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
   .. ..$ link   :List of 1
   .. .. ..$ hyper: list()
- $ fixed    :List of 40
+ $ fixed    :List of 26
   ..$ :List of 3
   .. ..$ label     : chr "(Intercept)"
   .. ..$ prior.mean: num 0
@@ -112,10 +112,6 @@ List of 4
   .. ..$ prior.mean: num 0
   .. ..$ prior.prec: num 0.001
   ..$ :List of 3
-  .. ..$ label     : chr "acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
   .. ..$ label     : chr "month6"
   .. ..$ prior.mean: num 0
   .. ..$ prior.prec: num 0.001
@@ -157,58 +153,6 @@ List of 4
   .. ..$ prior.prec: num 0.001
   ..$ :List of 3
   .. ..$ label     : chr "day_of_weekSat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster1:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster10:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster11:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster12:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster13:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster14:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster2:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster3:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster4:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster5:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster7:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster8:acute_heat"
-  .. ..$ prior.mean: num 0
-  .. ..$ prior.prec: num 0.001
-  ..$ :List of 3
-  .. ..$ label     : chr "cluster9:acute_heat"
   .. ..$ prior.mean: num 0
   .. ..$ prior.prec: num 0.001
  $ random   :List of 4

@@ -1,0 +1,123 @@
+{
+  "status": "completed",
+  "checks": [
+    {
+      "name": "Correlation PC prior matches native INLA two-zone benchmark",
+      "passed": true,
+      "detail": 1.7763568394002505e-15
+    },
+    {
+      "name": "Five-zone correlation density agrees with matrix determinant and numerical Jacobian",
+      "passed": true,
+      "detail": 1.3054979319804261e-10
+    },
+    {
+      "name": "Shared input provenance matches the fitted model",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "All 14 linear heat slopes removed; shared fixed design preserved",
+      "passed": true,
+      "detail": {
+        "coefficients": 26,
+        "observations": 54910
+      }
+    },
+    {
+      "name": "Shared ZIP/date row order preserved",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Fitted counts match the current suppressed-count reconstruction",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Linear heat metadata disabled",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Shared population offsets and heat grid preserved",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Negative-binomial likelihood and converged mode",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Exactly four random-effect precision terms",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Expected precision prior doy",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Expected precision prior acute_heat_rw2_shared",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Expected precision prior acute_heat_rw2_dev",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Exchangeable zone correlation uses the calibrated PC table",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "Expected precision prior zip_id",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "PC prior on negative-binomial size",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "42 finite cluster-by-zone full heat contrasts",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "All 42 saved contrasts match the fitted fixed terms and shared/zone curves",
+      "passed": true,
+      "detail": {}
+    }
+  ],
+  "map_files": {},
+  "sampling_backend_checked": false,
+  "plot_settings": {},
+  "separate_marginal_mean_discrepancy_log_irr": 0.00031374649183971148,
+  "model_md5": "c2ab30be2178490b8f31a037bd327aab",
+  "correlation_pc_prior": {
+    "type": "PC exchangeable correlation",
+    "K": 5,
+    "base": 0,
+    "u": 0.5,
+    "alpha": 0.10000000000000001,
+    "calibration": "P(rho > 0.5) = 0.1",
+    "branch_probability": 0.5,
+    "lambda": 1.2439403565848397,
+    "mass": 0.99999999977057819,
+    "interpolated_mass": 0.99999999985671306,
+    "calibrated_tail": 0.099999999999082531,
+    "support": [-0.25, 1],
+    "internal_table_bounds": [-300, 120]
+  },
+  "precision_prior": {
+    "prior": "pc.prec",
+    "param": [0.5, 0.01]
+  },
+  "interpretation": "Finite implementation checks passed; approximate Bayesian inference and the specified prior calibration remain modeling assumptions."
+}

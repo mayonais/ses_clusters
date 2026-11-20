@@ -1,0 +1,316 @@
+List of 4
+ $ predictor:List of 1
+  ..$ hyper:List of 1
+  .. ..$ theta:List of 9
+  .. .. ..$ hyperid   : num 53001
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ name      : chr "log precision"
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ short.name: chr "prec"
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ initial   : num 13.8
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ fixed     : logi TRUE
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ prior     : chr "loggamma"
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ param     : num [1:2] 1e+00 1e-05
+  .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. ..$ to.theta  :function (x)  
+  .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  .. .. ..$ from.theta:function (x)  
+  .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+ $ family   :List of 1
+  ..$ :List of 4
+  .. ..$ hyperid: chr "INLA.Data1"
+  .. ..$ label  : chr "nbinomial"
+  .. ..$ hyper  :List of 1
+  .. .. ..$ theta:List of 11
+  .. .. .. ..$ hyperid           : num 63001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name              : chr "size"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name        : chr "size"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ output.name       : chr "size for the nbinomial observations (1/overdispersion)"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ output.name.intern: chr "log size for the nbinomial observations (1/overdispersion)"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial           : num 2.3
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed             : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior             : chr "pc.mgamma"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param             : num 7
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta          :function (x)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  .. .. .. ..$ from.theta        :function (x)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  .. ..$ link   :List of 1
+  .. .. ..$ hyper: list()
+ $ fixed    :List of 26
+  ..$ :List of 3
+  .. ..$ label     : chr "(Intercept)"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster1"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster10"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster11"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster12"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster13"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster14"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster2"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster3"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster4"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster5"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster7"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster8"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "cluster9"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "chronic_heat"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "month6"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "month7"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "month8"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "month9"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "month10"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "day_of_weekMon"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "day_of_weekTue"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "day_of_weekWed"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "day_of_weekThu"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "day_of_weekFri"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+  ..$ :List of 3
+  .. ..$ label     : chr "day_of_weekSat"
+  .. ..$ prior.mean: num 0
+  .. ..$ prior.prec: num 0.001
+ $ random   :List of 4
+  ..$ :List of 3
+  .. ..$ hyperid    : chr "doy"
+  .. ..$ hyper      :List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 5001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "log precision"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "pc.prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 1 0.01
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 4
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x)  
+  .. .. .. ..$ from.theta:function (x)  
+  .. ..$ group.hyper:List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 40001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "logit correlation"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "rho"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 1
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "normal"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 0 0.2
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x, REPLACE.ME.ngroup)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  .. .. .. ..$ from.theta:function (x, REPLACE.ME.ngroup)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  ..$ :List of 3
+  .. ..$ hyperid    : chr "acute_heat_rw2_shared"
+  .. ..$ hyper      :List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 5001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "log precision"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "pc.prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 1 0.01
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 4
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x)  
+  .. .. .. ..$ from.theta:function (x)  
+  .. ..$ group.hyper:List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 40001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "logit correlation"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "rho"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 1
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "normal"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 0 0.2
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x, REPLACE.ME.ngroup)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  .. .. .. ..$ from.theta:function (x, REPLACE.ME.ngroup)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  ..$ :List of 3
+  .. ..$ hyperid    : chr "acute_heat_rw2_dev"
+  .. ..$ hyper      :List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 5001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "log precision"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "pc.prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 1 0.01
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 4
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x)  
+  .. .. .. ..$ from.theta:function (x)  
+  .. ..$ group.hyper:List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 40001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "logit correlation"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "rho"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 0
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "table: -300 -299.94999999999999 -299.89999999999998 -299.85000000000002 -299.80000000000001 -299.75 -299.699999"| __truncated__
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 0 0.2
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x, ngroup = 5)  
+  .. .. .. ..$ from.theta:function (x, ngroup = 5)  
+  ..$ :List of 3
+  .. ..$ hyperid    : chr "zip_id"
+  .. ..$ hyper      :List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 1001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "log precision"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "pc.prec"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 1 0.01
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 4
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x)  
+  .. .. .. ..$ from.theta:function (x)  
+  .. ..$ group.hyper:List of 1
+  .. .. ..$ theta:List of 9
+  .. .. .. ..$ hyperid   : num 40001
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ name      : chr "logit correlation"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ short.name: chr "rho"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ initial   : num 1
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ fixed     : logi FALSE
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ prior     : chr "normal"
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ param     : num [1:2] 0 0.2
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi FALSE
+  .. .. .. ..$ to.theta  :function (x, REPLACE.ME.ngroup)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE
+  .. .. .. ..$ from.theta:function (x, REPLACE.ME.ngroup)  
+  .. .. .. .. ..- attr(*, "inla.read.only")= logi TRUE

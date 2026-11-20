@@ -1,0 +1,30 @@
+MATCHED POISSON VERSUS CURRENT BASELINE NEGATIVE BINOMIAL
+
+The exact current NB fit is reused. Only the count likelihood changes in the Poisson fit.
+Same 54,910 observations, offsets, 26 fixed coefficients, ZIP iid, shared/zone RW2 and exchangeable group prior.
+Fixed Normal priors and four PC precision priors are unchanged; Poisson has no NB size parameter.
+Both fits use INLA's default approximation/integration settings and two outer threads.
+The Poisson fit skips saved joint-sampling configurations and derived heat contrasts; these are not needed for the requested diagnostics.
+No excess-rate draws or map exports are generated. Baseline results, maps and methods files are hash-verified unchanged.
+
+Smaller DIC and WAIC indicate better fit by those criteria; differences are Poisson minus NB.
+Zero checks are in-sample plug-in diagnostics, not fully integrated posterior-predictive tests.
+Predicted counts use population times posterior mean fitted rate, and posterior mean size for NB.
+The zero gap is observed minus predicted in percentage points; positive means underprediction of zeros.
+The mean squared Pearson residual is descriptive and is not adjusted for fitted degrees of freedom.
+
+    family       DIC      WAIC     n observed_zeros expected_zeros_plugin
+ nbinomial 65217.113 65260.345 54910          47892             47759.063
+   poisson 91419.609 94386.615 54910          47892             40717.758
+ observed_zero_fraction predicted_zero_fraction_plugin
+             0.87219086                     0.86976986
+             0.87219086                     0.74153629
+ zero_gap_percentage_points NB_size_posterior_mean
+                 0.24210011             0.10322778
+                13.06545708                     NA
+ mean_squared_Pearson_residual_plugin delta_DIC_vs_NB delta_WAIC_vs_NB
+                            1.2524174           0.000             0.00
+                            3.6082967       26202.495         29126.27
+
+Grouped zero diagnostics: zero_diagnostics_by_group.csv (SES cluster, ZIP, climate zone and month).
+Count-bin checks: count_distribution_diagnostics.csv (0, 1, 2, 3-4, 5+).

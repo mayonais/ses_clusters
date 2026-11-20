@@ -8,17 +8,27 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
   library(sf)
   library(ggrepel)
   source("shared_functions.R")
-  reference_irr <- readRDS("Los_Angeles_discrete_none/climate_zone_added/acute_heat_poisson/acute_heat_irr_map.rds")
-  reference_probability <- readRDS("Los_Angeles_discrete_none/climate_zone_added/acute_heat_poisson/acute_heat_ggplots.rds")$probability_map
-  reference_ar <- readRDS("Los_Angeles_discrete_none/climate_zone_added/AR_gt_0_gradient.rds")
+  if (!interactive() && grDevices::dev.cur() == 1L) {
+    grDevices::pdf(NULL)
+    on.exit(grDevices::dev.off(), add = TRUE)
+  }
+  map_style <- readRDS("Los_Angeles_discrete_none/heat_map_style.rds")
+  stopifnot(identical(map_style$schema_version, 1L))
+  reference_irr <- map_style$irr
+  reference_probability <- map_style$probability
+  reference_ar <- map_style$excess_rate
+  if (!file.exists(file.path(results_dir, "summaries.rds")))
+    stop("Fit the revised NB model with hri_ed_analysis.R before exporting maps.")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   prepared <- load_heat_data("Los_Angeles_discrete_none")
   results <- readRDS(file.path(results_dir, "summaries.rds"))
-  stopifnot("acute_heat" %in% results$sampling_info$names.fixed,
-    sum(grepl("cluster.*:acute_heat|acute_heat:cluster", results$sampling_info$names.fixed)) == 13L)
+  has_linear_heat <- "acute_heat" %in% results$sampling_info$names.fixed
+  interaction_count <- sum(grepl("cluster.*:acute_heat|acute_heat:cluster", results$sampling_info$names.fixed))
+  stopifnot(interaction_count == if (has_linear_heat) 13L else 0L)
   heat_sd_f <- prepared$heat_sd
   heat_increment <- sprintf("1 SD = %.2f\u00b0F", heat_sd_f)
-  model_label <- "Negative binomial | preserved SES heat slopes | PC hyperpriors"
+  heat_structure <- if (has_linear_heat) "SES heat slopes + shared/zone curves" else "Shared/zone heat curves"
+  model_label <- paste("Negative binomial", heat_structure, "PC hyperpriors", sep = " | ")
   reference <- prepared$reference_cluster
   assignments <- st_drop_geometry(prepared$clustered_zctas) %>%
     transmute(GEOID = as.character(GEOID), cluster = as.character(cluster), cluster_label)
@@ -76,14 +86,12 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
     map_data <- polygons %>% left_join(estimates, by = by)
     stopifnot(!anyNA(map_data[[value]]))
     if (identical(value, "IRR_median")) {
-      shown_range <- range(map_data[[value]])
-      stopifnot(scale$limits[1] <= shown_range[1], scale$limits[2] >= shown_range[2],
-        identical(scale$limits, c(1, 2)), identical(scale$breaks, seq(1, 2, by = 0.2)),
+      stopifnot(identical(scale$limits, c(1, 2)), identical(scale$breaks, seq(1, 2, by = 0.2)),
         identical(toupper(unname(scale$map(scale$limits))), c("#FFFFFF", "#B2182B")),
         all(grDevices::col2rgb(scale$map(1)) >= 250))
     } else {
       reference_scale <- (if (identical(value, "P_AR_gt_0")) reference_ar else
-        reference_probability)$scales$get_scales("fill")
+        reference_probability)$fill_scale
       stopifnot(identical(scale$map(seq(0, 1, length.out = 101)),
         reference_scale$map(seq(0, 1, length.out = 101))))
     }
@@ -102,14 +110,15 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
         if (identical(value, "P_IRR_gt_1")) reference_probability$theme else reference_irr$theme)
   }
   ratio_scale <- function(values, legend) {
-    stopifnot(all(is.finite(values)), all(values >= 1 & values <= 2))
+    stopifnot(all(is.finite(values)), all(values > 0))
     scale_fill_gradientn(colours = c("white", "#B2182B"),
       limits = c(1, 2), breaks = seq(1, 2, by = 0.2),
+      oob = scales::squish,
       labels = function(x) sprintf("%.1f", x), name = legend,
       guide = guide_colourbar(barheight = grid::unit(65, "mm")))
   }
   prob_scale <- function(legend, reference = reference_probability) {
-    scale <- reference$scales$get_scales("fill")$clone()
+    scale <- reference$fill_scale$clone()
     scale$name <- legend
     scale$labels <- scales::label_percent(accuracy = 1)
     scale
@@ -117,15 +126,20 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
   
   acute_map <- zip_info %>% mutate(log_irr = log(IRR_median)) %>% select(-cluster)
   heat_subtitle <- paste0("Negative-binomial model | Posterior median IRRs for +", sprintf("%.2f\u00b0F", heat_sd_f),
-    " (1 SD)\nSES heat slopes + zone curves | ZIP iid + PC hyperpriors")
-  heat_caption <- "SD is calculated county-wide. Missing-zone ZIPs retain the shared heat curve and SES-specific slope."
+    " (1 SD)\n", heat_structure, " | ZIP iid + PC hyperpriors")
+  heat_caption <- if (has_linear_heat)
+    "SD is calculated county-wide. Missing-zone ZIPs retain the shared heat curve and SES-specific slope." else
+    "SD is calculated county-wide. Missing-zone ZIPs use the shared heat curve; linear cluster heat slopes are excluded."
+  if (any(zip_info$IRR_median < 1 | zip_info$IRR_median > 2))
+    heat_caption <- paste(heat_caption, "IRRs outside 1.0-2.0 use the nearest legend end color; estimates are unchanged.")
+  heat_caption <- paste(strwrap(heat_caption, width = 110L), collapse = "\n")
   export(map_plot(acute_map, "IRR_median", "Los Angeles acute-heat incidence rate ratios",
     heat_subtitle, ratio_scale(zip_info$IRR_median[zip_info$GEOID %in% polygons$GEOID],
       "Acute-heat IRR\n(1 = no change)"), by = "GEOID",
     caption = heat_caption), "acute_heat_irr_1sd_map")
   export(map_plot(acute_map, "P_IRR_gt_1", "Los Angeles posterior exceedance probabilities",
     paste0("Negative-binomial model | Posterior probability of an increased rate\nfor +", sprintf("%.2f\u00b0F", heat_sd_f),
-      " (1 SD) from each ZIP's average | SES heat slopes + PC hyperpriors"),
+      " (1 SD) from each ZIP's average | ", heat_structure, " + PC hyperpriors"),
     prob_scale(expression(Pr(IRR["1SD"] > 1 ~ "|" ~ Y))), by = "GEOID",
     caption = heat_caption), "acute_heat_probability_map")
   
@@ -157,7 +171,8 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
   write.csv(heat %>% select(-row), file.path(results_dir, "acute_heat_irr_1sd_by_cluster_zone.csv"), row.names = FALSE)
   export(forest(heat, "IRR_median", "IRR_lower", "IRR_upper", "Acute-heat IRRs per one SD",
     heat_subtitle, sprintf("Acute-heat IRR for +%.2f\u00b0F (log scale)", heat_sd_f),
-    "ZIP mean heat versus one SD above that mean; remaining model terms held fixed.\nPoints: posterior medians; bars: 95% credible intervals. Heat responses vary by SES cluster and climate zone.") +
+    paste0("ZIP mean heat versus one SD above that mean; remaining model terms held fixed.\nPoints: posterior medians; bars: 95% credible intervals. Heat responses vary by ",
+      if (has_linear_heat) "SES cluster and climate zone." else "climate zone; clusters in the same zone share the heat curve.")) +
       facet_wrap(~zone_label, ncol = 3),
     "acute_heat_irr_1sd_forest")
   
@@ -207,11 +222,13 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
     paste("Source model:", file.path(results_dir, "nbinomial_model.rds")),
     paste0("Baseline cluster IRRs: conditional SES contrasts, relative to cluster ", reference, "."),
     paste0("Acute-heat IRRs: ", heat_increment, " above each ZIP's overall mean, versus that mean."),
-    "Acute heat retains the common and SES-specific slopes, shared RW2 curve, and correlated climate-zone deviations.",
+    if (has_linear_heat) "Acute heat retains common/SES-specific slopes, a shared RW2 curve and correlated climate-zone deviations." else
+      "Acute heat uses only the shared RW2 curve and correlated climate-zone deviations; no linear cluster heat slopes.",
     "Excess rates: observed heat versus the SES-cluster monthly mean; signed visits/10,000 people/day.",
     "Maps use the existing mainland extent, 10 by 8 inch canvases, SES outlines and haloed cluster numbers.",
-    "Visual reference: maps/climate_zone_added; its saved ggplot themes are reused.",
+    "Visual reference: colors and themes preserved in Los_Angeles_discrete_none/heat_map_style.rds.",
     "IRR legend is fixed at 1.0-2.0 with ticks every 0.2; probability legends remain fixed at 0-100%.",
+    "IRRs outside the display limits use the nearest end color; saved estimates remain unmodified.",
     "IRR uses the positive side of the climate_zone_added palette: white at 1.0 and red (#B2182B) at 2.0.",
     "Probability maps retain their climate_zone_added blue-off-white-red palette with midpoint 50%.",
     "Only three maps are exported: acute-heat IRR, acute-heat IRR exceedance probability, and excess-rate exceedance probability.",
@@ -220,7 +237,8 @@ export_nb_pc_figures <- function(output_dir = "maps/nb_pc_prior",
     file.path(results_dir, "figure_notes.txt"))
 }
 
-nb_pc_mode <- "--nb-pc" %in% commandArgs(trailingOnly = TRUE) ||
+nb_pc_mode <- !exists("model_variant", inherits = FALSE) ||
+  "--nb-pc" %in% commandArgs(trailingOnly = TRUE) ||
   (exists("model_variant", inherits = FALSE) && identical(model_variant, "nb_pc_prior"))
 if (nb_pc_mode) {
   export_nb_pc_figures()
@@ -244,8 +262,8 @@ source(file.path(project_dir, "shared_functions.R"))
 input_dir <- file.path(project_dir, "Los_Angeles_discrete_none")
 model_prefix <- "Los_Angeles_discrete_none_HEAT_by_cluster"
 if (!exists("model_variant", inherits = FALSE)) model_variant <- "climate_zone_added"
-if (identical(model_variant, "climate_zone"))
-  stop("The climate_zone results were removed. Select climate_zone_added or use --nb-pc for the current model.")
+if (model_variant %in% c("climate_zone", "climate_zone_added"))
+  stop("These historical climate-zone results were removed. Use --nb-pc for the current model.")
 results_root <- if (model_variant %in% c("climate_zone_added", "climate_zone")) {
   file.path(input_dir, model_variant)
 } else file.path(input_dir, "linear_cluster")

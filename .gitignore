@@ -49,3 +49,13 @@ calenviroscreen/
 /Los_Angeles_discrete_none/climate_zone_added_nb_pc/stdout.txt
 /Los_Angeles_discrete_none/climate_zone_added_nb_pc/stderr.txt
 !/methods/climate_zone_added_nb_pc/*.pdf
+
+# Keep model execution work and restart logs local.
+**/inla_work/
+**/stdout.txt
+**/stderr.txt
+**/*_stdout.txt
+**/*_stderr.txt
+**/protected_files.rds
+**/matched_inputs.rds
+/methods/climate_zone_added_nb_pc/build/

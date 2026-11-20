@@ -1,0 +1,64 @@
+Time used:
+    Pre = 1.12, Running = 73.8, Post = 1.01, Total = 75.9 
+Fixed effects:
+                  mean    sd 0.025quant 0.5quant 0.975quant    mode kld
+(Intercept)    -11.289 0.165    -11.610  -11.289    -10.965 -11.289   0
+cluster1        -0.473 0.085     -0.640   -0.473     -0.306  -0.473   0
+cluster10       -0.502 0.155     -0.807   -0.502     -0.197  -0.502   0
+cluster11       -0.213 0.097     -0.404   -0.213     -0.022  -0.213   0
+cluster12       -0.246 0.136     -0.513   -0.246      0.021  -0.246   0
+cluster13       -0.501 0.110     -0.716   -0.501     -0.285  -0.501   0
+cluster14       -0.327 0.107     -0.537   -0.327     -0.116  -0.327   0
+cluster2        -0.194 0.124     -0.436   -0.194      0.049  -0.194   0
+cluster3        -0.405 0.093     -0.586   -0.405     -0.223  -0.405   0
+cluster4        -0.358 0.149     -0.650   -0.358     -0.065  -0.358   0
+cluster5         0.605 0.210      0.192    0.605      1.016   0.605   0
+cluster7        -0.441 0.244     -0.920   -0.441      0.037  -0.441   0
+cluster8         0.070 0.138     -0.200    0.070      0.341   0.070   0
+cluster9        -0.247 0.094     -0.430   -0.247     -0.063  -0.247   0
+chronic_heat    -0.032 0.089     -0.206   -0.032      0.143  -0.032   0
+month6          -0.133 0.117     -0.365   -0.132      0.096  -0.132   0
+month7          -0.249 0.170     -0.584   -0.248      0.083  -0.248   0
+month8           0.073 0.202     -0.326    0.073      0.469   0.073   0
+month9           0.243 0.234     -0.219    0.243      0.701   0.243   0
+month10          0.178 0.261     -0.338    0.178      0.688   0.178   0
+day_of_weekMon   0.068 0.030      0.009    0.068      0.128   0.068   0
+day_of_weekTue   0.064 0.031      0.004    0.064      0.124   0.064   0
+day_of_weekWed   0.061 0.030      0.002    0.061      0.121   0.061   0
+day_of_weekThu   0.083 0.030      0.023    0.083      0.143   0.083   0
+day_of_weekFri   0.038 0.031     -0.023    0.038      0.099   0.038   0
+day_of_weekSat   0.007 0.031     -0.053    0.007      0.067   0.007   0
+
+Random effects:
+  Name	  Model
+    doy RW2 model
+   acute_heat_rw2_shared RW2 model
+   acute_heat_rw2_dev RW2 model
+   zip_id IID model
+
+Model hyperparameters:
+                                     mean    sd 0.025quant 0.5quant 0.975quant
+Precision for doy                   0.388 0.183      0.154    0.349      0.858
+Precision for acute_heat_rw2_shared 2.573 1.881      0.640    2.068      7.572
+Precision for acute_heat_rw2_dev    0.986 0.520      0.335    0.870      2.319
+GroupRho for acute_heat_rw2_dev     0.008 0.045     -0.070    0.004      0.108
+Precision for zip_id                7.651 0.798      6.237    7.598      9.374
+                                      mode
+Precision for doy                    0.283
+Precision for acute_heat_rw2_shared  1.386
+Precision for acute_heat_rw2_dev     0.681
+GroupRho for acute_heat_rw2_dev     -0.005
+Precision for zip_id                 7.468
+
+Deviance Information Criterion (DIC) ...............: 91419.61
+Deviance Information Criterion (DIC, saturated) ....: 72928.88
+Effective number of parameters .....................: 275.67
+
+Watanabe-Akaike information criterion (WAIC) ...: 94386.62
+Effective number of parameters .................: 2209.24
+
+Marginal log-Likelihood:  -47855.34 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also 'control.compute=list(return.marginals.predictor=TRUE)')
+

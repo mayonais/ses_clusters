@@ -21,38 +21,37 @@ The updated model for ED counts is
 \begin{align}
 Y_{id}\mid\theta&\sim\operatorname{NB}(n_{id}\mu_{id},r),\qquad r>0,\nonumber\\
 \log\mu_{id}&=\alpha+\gamma_{k(i)}+\beta_{\mathrm{chronic}}\bar H_i
-+\beta_{\mathrm{acute},k(i)}(H_{id}-\bar H_i)
 +\beta_{m(d)}+\beta_{w(d)}\nonumber\\
 &\quad+f_{\mathrm{doy}}(d)
 +f_{\mathrm{acute},\mathrm{cz}[i]}(H_{id}-\bar H_i)+u_i,\label{eq:model}\\
 f_{\mathrm{acute},\mathrm{cz}[i]}(\cdot)
 &=f_{\mathrm{shared}}(\cdot)+f_{\mathrm{dev},\mathrm{cz}[i]}(\cdot),\nonumber\\
-\beta_{\mathrm{acute},k}&=\beta_{\mathrm{acute}}+\delta_k,\qquad
-u_i\mid\tau_{\mathrm{ZIP}}\overset{\mathrm{iid}}{\sim}N(0,\tau_{\mathrm{ZIP}}^{-1}).\nonumber
+u_i\mid\tau_{\mathrm{ZIP}}&\overset{\mathrm{iid}}{\sim}N(0,\tau_{\mathrm{ZIP}}^{-1}).\nonumber
 \end{align}
 Here, $u_i$ is the ZIP-specific random intercept, allowing each ZIP to have
 its own underlying ED rate after accounting for the other predictors.
 The precision $\tau_{\mathrm{ZIP}}$ is its inverse variance; iid denotes
 independent, identically distributed intercepts conditional on that precision.
 The terms $m(d)$ and $w(d)$ denote month and weekday; $f_{\mathrm{doy}}$ is the
-seasonal RW2 effect. Reference-cluster constraints remain
-$\gamma_{k_0}=\delta_{k_0}=0$, with $k_0=6$.
-The SES-specific heat slopes are linear; the RW2 heat curves supply the
-nonlinear response.
+seasonal RW2 effect. The reference-cluster constraint is
+$\gamma_{k_0}=0$, with $k_0=6$.
+The common acute-heat coefficient and all SES-specific linear heat
+interactions have been removed; baseline SES-cluster effects remain.
+Acute heat enters through the shared and climate-zone RW2 curves.
 
-Acute-heat contrasts include the SES-specific linear slope and both heat
-curves. Comparing $x=0$ (the ZIP's mean heat) with $x=1$ (one county-wide
+Acute-heat contrasts include both heat curves. Comparing $x=0$ (the ZIP's
+mean heat) with $x=1$ (one county-wide
 heat SD above that mean),
 \[
-L_i=\beta_{\mathrm{acute},k(i)}
-+f_{\mathrm{acute},\mathrm{cz}[i]}(1)
+L_i=f_{\mathrm{acute},\mathrm{cz}[i]}(1)
 -f_{\mathrm{acute},\mathrm{cz}[i]}(0),\qquad
 \mathrm{IRR}_{1\mathrm{SD},i}=e^{L_i},\qquad
 p_i=\Pr(L_i>0\mid Y).
 \]
 INLA linear-combination marginals provide medians, 95\% credible intervals
 and probabilities for the 42 observed SES-cluster--zone combinations,
-including missing zones. Curves are evaluated at the nearest nodes on the
+including missing zones. Clusters within a climate zone share the same
+one-SD heat response. Curves are evaluated at the nearest nodes on the
 retained 50-node grid. Excess-rate uncertainty was estimated using 2,000
 joint posterior draws that respected the fitted model constraints.
 
@@ -60,7 +59,7 @@ joint posterior draws that respected the fitted model constraints.
 The model includes \texttt{f(zip\_id, model = "iid")}.
 The ZIP-level SD, $\sigma_{\mathrm{ZIP}}=\tau_{\mathrm{ZIP}}^{-1/2}$,
 is summarized from the transformed precision marginal, giving a posterior
-mean of 0.278 and 95\% credible interval 0.231--0.321 on the log-rate scale.
+mean of 0.278 and 95\% credible interval 0.235--0.323 on the log-rate scale.
 Fit and zero-fraction diagnostics are shown under Overdispersion.
 Conditional baseline cluster effects are reported as $\exp(\gamma_k)$ with 95\% credible
 intervals and reference cluster 6 assigned IRR 1. A matched comparison
@@ -109,52 +108,43 @@ The correlation prior favors $\rho=0$, with prior probability $0.5$ on
 negative correlations and $0.5$ on positive correlations. Conditional on
 either sign, the distance $d_\rho=\sqrt{-\log\det R(\rho)}$ from zero
 correlation has an exponential distribution, calibrated so that
-$\Pr(\rho>0.5)=0.1$. This prior is converted to INLA's computation scale
-without changing its probabilities.
+$\Pr(\rho>0.5)=0.1$.
+
 NB size $r$ uses \texttt{pc.mgamma} with INLA's default rate parameter 7,
-shrinking toward the Poisson limit. The 39 non-intercept fixed coefficients
+shrinking toward the Poisson limit. The 25 non-intercept fixed coefficients
 retain independent $N(0,1000)$ priors, where 1000 is the variance;
 the overall intercept $\alpha$ remains flat.
 
-For precision-prior sensitivity, the four precision priors were varied
-jointly: stronger PC priors use
-$\Pr(\tau_j^{-1/2}>0.5)=0.01$, weaker PC priors use
-$\Pr(\tau_j^{-1/2}>2)=0.01$, and a comparison uses
-$\tau_j\sim\operatorname{Gamma}(1,5\times10^{-5})$ with shape--rate
-parameters. Correlation, NB-size and fixed-coefficient priors remain at
-baseline. These fit-only comparisons use heat-effect marginals,
-conditional SES-cluster IRRs, DIC and WAIC, without using additional
-excess-rate draws.
-
-For coefficient-variance sensitivity, separate NB fits changed only the
-Normal prior variance for the 39
-non-intercept fixed coefficients from 1000 to 100 or 10, retaining zero prior
-means, the flat intercept and all PC priors. Variance 100 was optimized
-again from its fitted solution; this retained fit converged without
-likelihood-recovery warnings. The diagnostics are summarized below.
+For precision-prior sensitivity, the four precision priors were varied jointly:
+stronger PC priors use $\Pr(\tau_j^{-1/2}>0.5)=0.01$, weaker PC priors use
+$\Pr(\tau_j^{-1/2}>2)=0.01$, and the comparator uses
+$\tau_j\sim\operatorname{Gamma}(1,5\times10^{-5})$ with shape--rate parameters.
+All other priors, data, predictors and offsets remained at baseline.
+These fit-only checks used INLA heat-effect marginals, conditional cluster IRRs,
+DIC and WAIC, without additional excess-rate draws.
 \begin{center}
 \small
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{lrrrrr}
 \hline
-\shortstack{Normal prior\\variance} & DIC & WAIC &
+Precision prior & DIC & WAIC &
 \shortstack{Predicted\\zeros (\%)} &
 \shortstack{Max. IRR median\\change (\%)} &
 \shortstack{Max. probability\\change (pp)}\\
 \hline
-1000 (baseline) & 65,207.33 & 65,254.86 & 86.98 & 0.00 & 0.00\\
-100 (rerun) & 65,207.28 & 65,254.33 & 86.98 & 0.77 & 1.14\\
-10 & 65,206.02 & 65,253.74 & 86.99 & 0.52 & 0.81\\
+Baseline PC & 65,217.11 & 65,260.35 & 86.98 & 0.00 & 0.00\\
+Stronger PC & 65,217.72 & 65,260.56 & 86.98 & 1.86 & 3.12\\
+Weaker PC & 65,216.81 & 65,260.83 & 86.98 & 1.13 & 1.68\\
+Gamma & 65,217.23 & 65,259.79 & 86.98 & 6.55 & 10.26\\
 \hline
 \end{tabular}
 \end{center}
 Changes are relative to baseline across the 42 complete heat contrasts;
-pp denotes percentage points. The retained variance-100 fit agreed with baseline on
-whether each of the 42 heat intervals excluded 1. At variance 10, one borderline
-interval (SES cluster 14, zone 29) changed from including to excluding 1.
-These fit-only checks used INLA marginals without additional excess-rate draws; the
-variance-1000 NB baseline was retained.
+pp denotes percentage points. No alternative changed which 95\% heat-effect
+intervals excluded 1. The weaker-PC and Gamma fits were restarted from their
+fitted solutions to resolve initial numerical curvature adjustments; the retained
+fits required no negative-eigenvalue corrections. The PC baseline is retained.
 
 \textbf{5. Overdispersion.}
 The negative-binomial likelihood allows daily ED counts to vary more than
@@ -163,7 +153,7 @@ Its conditional mean is $M_{id}=n_{id}\mu_{id}$ and variance is
 $M_{id}+M_{id}^2/r$; as $r\to\infty$, it approaches Poisson.
 A matched Poisson fit retained the ZIP intercept, predictor terms,
 population exposures and common priors on the same 54,910 ZIP-days.
-Observed zeros numbered 47,898 (87.23\%). The comparison supports retention
+Observed zeros numbered 47,892 (87.22\%). The comparison supports retention
 of the NB baseline; smaller DIC and WAIC are preferred.
 \begin{center}
 \small
@@ -172,8 +162,8 @@ of the NB baseline; smaller DIC and WAIC are preferred.
 \hline
 Count likelihood & DIC & WAIC & Predicted zeros (\%)\\
 \hline
-NB baseline & 65,207.33 & 65,254.86 & 86.98\\
-Matched Poisson & 91,394.49 & 94,721.52 & 74.16\\
+NB baseline & 65,217.11 & 65,260.35 & 86.98\\
+Matched Poisson & 91,419.61 & 94,386.62 & 74.15\\
 \hline
 \end{tabular}
 \end{center}
@@ -185,10 +175,13 @@ plug-in diagnostics. Checks also cover clusters, ZIPs, zones and months.
 In \texttt{suppressed\_data.R}, daily suppressed cells are initially
 imputed by uniform integer draws from 1--11 (seed 1), then adjusted
 toward monthly totals using proportional allocation and largest-remainder
-rounding. Original daily zeros are preserved before the monthly-allocation
-branches. The special one-visit override for all-zero ZIP-months is not
-used: the seven ZIP-months with a suppressed monthly total and all-zero
-daily records remain zero and are exceptions to reconciliation. The
+rounding. The one-visit override now precedes the raw-zero branch:
+when a monthly total is suppressed but every daily count is zero, one
+uniformly selected day receives one visit and all other days remain zero.
+This assigns the minimum positive monthly total, rather than recovering the
+unknown count or visit date. Exactly seven ZIP-months receive this correction;
+six assigned visits fall on days retained for modeling. Other original daily
+zeros are preserved before the monthly-allocation branches. The
 initial 1--11 range is not reapplied as a per-day upper bound after
 reconciliation.
 
@@ -200,11 +193,11 @@ Zero heat-index values denote unavailable heat and are excluded from
 fitting; genuine zero ED counts are retained. Catalina (90704) is kept:
 the coverage report documents usable heat on 176 of 184 days (95.7\%).
 Its missing climate-zone assignment is handled by retaining the shared
-heat curve, SES-specific slope and ZIP intercept without a zone deviation.
+heat curve and ZIP intercept without a zone deviation.
 The mainland map extent restricts display, not model eligibility.
 
 \textbf{8. Excess-rate reference.}
-Unchanged: excess rates compare observed heat with the SES cluster's monthly mean heat.
+Unchanged: the reference is the SES cluster's monthly mean heat.
 
 \textbf{9. Figures.}
 Cluster outlines: yes. Cluster numbering: yes. Forest plots: yes.
@@ -220,5 +213,13 @@ contributions are both retained. Conditional sampling variances were
 checked against those saved by INLA. Zero-fraction diagnostics use
 in-sample plug-in predictions rather than fully integrated
 posterior-predictive tests.
+
+Earlier coefficient-variance checks used the previous model with linear heat
+slopes and 39 non-intercept coefficients. Changing Normal variance from 1000 to
+100 or 10 produced maximum IRR-median changes of 0.77\% and 0.52\%, and probability
+changes of 1.14 and 0.81 percentage points, respectively. The retained variance-100
+fit was restarted from its fitted solution and preserved interval-exclusion
+decisions; variance 10 changed one borderline interval (cluster 14, zone 29).
+These checks have not been repeated for the current 25 non-intercept coefficients.
 
 \end{document}

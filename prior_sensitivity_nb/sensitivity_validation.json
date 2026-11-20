@@ -1,0 +1,31 @@
+{
+  "status": "completed",
+  "scenarios": {
+    "pc_baseline": {
+      "prior": "pc.prec",
+      "param": [1, 0.01]
+    },
+    "pc_stronger": {
+      "prior": "pc.prec",
+      "param": [0.5, 0.01]
+    },
+    "pc_weaker": {
+      "prior": "pc.prec",
+      "param": [2, 0.01]
+    },
+    "gamma_comparison": {
+      "prior": "loggamma",
+      "param": [1, 5.0000000000000002e-05]
+    }
+  },
+  "invariants_identical": true,
+  "observations": 54910,
+  "ZIPs": 309,
+  "fixed_coefficients": 26,
+  "SES_heat_slopes": 0,
+  "full_heat_contrasts_per_scenario": 42,
+  "posterior_sampling": false,
+  "newly_generated_excess_draws": 0,
+  "baseline_reused": true,
+  "current_model_md5": "b2ec2b5730fc2950a98b2a2c78d3c91b"
+}

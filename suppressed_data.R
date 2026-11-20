@@ -26,7 +26,7 @@ length(extra_in_daily) # extra zips in daily file not in clusters
 print(missing_from_daily)
 
 # =========================================================================
-# IMPUTE SUPPRESSED CELLS (<12), HEAT-SHAPED, BOUNDED 1-11, DAILY D2 only
+# IMPUTE SUPPRESSED CELLS (<12), UNIFORM 1-11, DAILY D2 only
 # =========================================================================
 
 set.seed(1)
@@ -80,16 +80,19 @@ daily_ed <- daily_ed %>%
     pool_cap = if_else(exceeds_cap, pmax((mo_upper - 1) - sum(baseline), 0), NA_real_),
     D2_cap_case = allocate_remainder(pool_cap, share, baseline),
     
-    # Preserve original daily zeros, including the seven ZIP-months with
-    # monthly totals <12 but all-zero daily records (exceptions to reconciliation).
-    D2 = case_when(suppressWarnings(as.numeric(D2Dx1)) == 0 ~ 0,
+    # A suppressed monthly total represents at least one visit. Select one day
+    # only in an all-zero ZIP-month; this override must precede raw-zero handling.
+    one_visit_day = if (isTRUE(first(mo_suppressed)) && first(daily_sum_raw) == 0)
+      sample.int(n(), 1L) else NA_integer_,
+    D2 = case_when(mo_suppressed & daily_sum_raw == 0 ~ as.numeric(row_number() == one_visit_day),
+                   suppressWarnings(as.numeric(D2Dx1)) == 0 ~ 0,
                    !is.na(mo_num) ~ D2_exact_case,
                    mo_suppressed & exceeds_cap ~ D2_cap_case,
                    mo_suppressed & !exceeds_cap ~ pmax(D2, if_else(D2_suppressed, 1, D2)),
                    TRUE ~ D2)) %>% ungroup() %>%
   select(-mo_suppressed, -mo_upper, -mo_num, -baseline, -share,
          -target_exact, -pool_exact, -D2_exact_case,
-         -exceeds_cap, -pool_cap, -D2_cap_case)
+         -exceeds_cap, -pool_cap, -D2_cap_case, -one_visit_day)
 gc()
 
 # ============================================================
@@ -110,8 +113,9 @@ check_suppressed <- daily_ed %>% group_by(zip, month) %>%
              by = c("zip", "month")) %>%
   mutate(in_valid_range = daily_sum >= 1 & daily_sum < mo_upper)
 
-print(sum(check_suppressed$daily_sum < 1)) # daily sums are 0 despite monthly <12; original daily zeros preserved
+print(sum(check_suppressed$daily_sum < 1)) # should be 0 after the one-visit override
 print(sum(check_suppressed$daily_sum >= 12)) # should be 0
+stopifnot(all(check_nonsuppressed$ok), all(check_suppressed$in_valid_range))
 
 # D2 imputed value distribution
 print(daily_ed %>% filter(D2_suppressed) %>%

@@ -1,0 +1,42 @@
+CORRECTED NEGATIVE-BINOMIAL PRIOR SENSITIVITY
+
+All four scenarios exclude the common heat slope and all 13 SES heat interactions.
+Identical 54,910 observations, 309 ZIPs, offsets, 50-node grid, fixed priors, NB size prior and PC correlation prior.
+Only the four random-effect precision priors vary, jointly:
+pc_baseline: P(SD > 1) = 0.01; exact current fit reused.
+pc_stronger: P(SD > 0.5) = 0.01.
+pc_weaker: P(SD > 2) = 0.01.
+gamma_comparison: Gamma(shape=1, rate=0.00005) on precision; comparator only.
+Every scenario retains the same PC zone-correlation prior and PC NB-size prior.
+The main corrected model and current maps are unchanged.
+
+Smaller WAIC/DIC is preferred by those criteria. Changes compare posterior point summaries.
+Probability changes are percentage points, using INLA full-contrast marginals.
+This comparison is fit-only: no excess-rate posterior draws are generated.
+The main baseline's excess-rate draws are preserved; no draws are created or used in these comparisons.
+RW2 precision controls curvature, not unpenalized linear trends; interpret complete heat contrasts.
+These results assess the listed joint precision-prior changes, not every possible prior choice.
+
+         scenario    family     DIC    WAIC observed_zero_fraction
+      pc_baseline nbinomial 65217.1 65260.3               0.872191
+      pc_stronger nbinomial 65217.7 65260.6               0.872191
+        pc_weaker nbinomial 65216.8 65260.8               0.872191
+ gamma_comparison nbinomial 65217.2 65259.8               0.872191
+ predicted_zero_fraction_plugin zip_sd_mean zip_sd_lower zip_sd_upper
+                       0.869770    0.278302     0.235067     0.323335
+                       0.869776    0.279074     0.234500     0.329766
+                       0.869769    0.282092     0.238715     0.325719
+                       0.869815    0.279753     0.234957     0.329808
+ delta_WAIC_vs_baseline delta_DIC_vs_baseline delta_WAIC_vs_gamma
+               0.000000              0.000000            0.551492
+               0.213363              0.604388            0.764854
+               0.487935             -0.307276            1.039427
+              -0.551492              0.119353            0.000000
+ max_heat_IRR_change_pct_vs_baseline max_heat_probability_change_pp_vs_baseline
+                             0.00000                                    0.00000
+                             1.86190                                    3.11696
+                             1.13334                                    1.68326
+                             6.55483                                   10.26227
+
+Detailed outputs: heat_contrasts.csv (42 contrasts per scenario) and conditional_cluster_irrs.csv.
+Each scenario contains the saved fit, active fitted priors, summaries and validation checks.

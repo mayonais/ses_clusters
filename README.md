@@ -5,12 +5,35 @@ daily ED-count reconstruction, and Poisson/negative-binomial heat-response model
 
 ## Corrected negative-binomial climate-zone model
 
-The current requested NB specification is fitted by `hri_ed_analysis.R`. It preserves
-the saved `climate_zone_added` fixed-effect design, including the common acute-heat
-slope and all SES-by-heat interactions. It changes the likelihood to negative
-binomial, adds an iid ZIP random intercept, and replaces replicated climate-zone
-deviations with `group = climate_zone_group` and exchangeable group correlation.
+The current requested NB specification is fitted by `hri_ed_analysis.R`. It removes
+the common acute-heat slope and all 13 SES-by-heat interactions from the saved
+`climate_zone_added` design, leaving 26 fixed coefficients. Acute heat enters through
+the shared and climate-zone RW2 curves. The model retains the negative-binomial
+likelihood, iid ZIP random intercept and exchangeable climate-zone deviations
+using `group = climate_zone_group`.
 The group index is the 1--5 encoding of the original climate-zone codes.
+
+The shared inputs `Los_Angeles_discrete_none/heat_model_layout.rds` and
+`Los_Angeles_discrete_none/heat_grid.rds` hold the preserved row layout, factor
+coding, population exposure, fixed-design information, heat grid and curve-node
+mappings. Fitting and validation read these compact files directly, without
+loading the original `climate_zone_added` fitted model. The layout contains no
+visit counts; current counts always come from the reconstructed daily input.
+Map colors and themes are preserved separately in
+`Los_Angeles_discrete_none/heat_map_style.rds`. The old
+`Los_Angeles_discrete_none/climate_zone_added/` results folder has been removed;
+the new fit and maps do not read it.
+
+`suppressed_data.R` now assigns one visit to one randomly selected day in each
+all-zero ZIP-month with a suppressed monthly total, before applying the raw-zero
+branch. With seed 1, exactly seven daily counts change from 0 to 1; all other
+counts are unchanged. Run this reconstruction before fitting if rebuilding inputs.
+The corrected daily input has been used to refit both NB and matched Poisson
+models. The NB maps and forest plots have been regenerated using 2,000 joint
+posterior draws for the excess-rate outputs. The preserved `main.pdf` and retained
+coefficient-variance comparisons describe the previous fit; `numbered_methods.pdf`
+describes the revised model and current precision-prior comparisons.
+The precision-prior comparisons have been replaced with runs of the revised model.
 
 ```powershell
 & 'C:\Program Files\R\R-4.4.3\bin\Rscript.exe' --vanilla hri_ed_analysis.R --preflight
@@ -38,10 +61,10 @@ Fitting, output generation, validation and precision-prior sensitivity are all
 handled by `hri_ed_analysis.R`. There is no separate validation script.
 
 Results are saved separately in
-`Los_Angeles_discrete_none/climate_zone_added_nb_pc/`; current map exports are in
-`maps/nb_pc_prior/`. The prior comparisons in `prior_sensitivity_nb/` use this
-same corrected model; the superseded comparisons without SES heat slopes were
-replaced. Current model results and map files are preserved during sensitivity runs.
+`Los_Angeles_discrete_none/climate_zone_added_nb_pc/`; new map exports go to
+`maps/nb_pc_prior/`, reusing the previous locations. Current precision-prior
+comparisons are in `prior_sensitivity_nb/`; its `coefficient_variance/` subfolder
+retains the earlier coefficient-prior checks for the previous model.
 
 The four precision priors are `pc.prec`, with `P(SD > 1) = 0.01`. The zone
 correlation has a two-sided PC prior with base zero, equal mass on each sign, and
@@ -51,26 +74,25 @@ numerically checked before fitting. NB size uses `pc.mgamma` with parameter 7.
 Fixed coefficients retain Normal(0, variance 1000) priors and the intercept is
 flat. These are PC hyperpriors, not PC priors on individual fixed coefficients.
 
-Original heat scaling, observations, population offsets, RW2 constraints and heat
-grid are preserved. Full one-SD heat contrasts include both the SES slopes and
-the complete shared/zone curves. The excess-rate reference remains the SES
+Original heat scaling, observation rows, population offsets, RW2 constraints and
+heat grid are preserved; reconstructed counts are updated. Full one-SD heat
+contrasts use the shared/zone curves without fixed linear heat slopes. Clusters
+in the same climate zone share the heat-response curve. The excess-rate reference remains the SES
 cluster's monthly mean heat, with equal ZIP-day weights. The individual fixed
-heat slope and RW2 linear-trend components should not be interpreted separately.
+baseline cluster effects remain in the model.
 
 The IRR legend is fixed at 1.0--2.0 in 0.2 intervals, using the positive side of
 the `climate_zone_added` palette: white at 1.0 and red at 2.0. Both probability
 maps retain their corresponding blue--off-white--red `climate_zone_added` palette
 with the midpoint at 50% and limits 0--100%.
 
-`Rscript hri_ed_analysis.R --validate-only` checks the preserved fixed design, active
+`Rscript hri_ed_analysis.R --validate-only` checks the reduced fixed design, updated counts, active
 fitted hyperpriors, all 42 contrast coefficient vectors, Gaussian sampling
 variances, draw counts and model provenance. `validation.json` records the
 checks. The correlation-prior check includes INLA's native two-zone PC prior as
 an independent benchmark. The model-fit manifest, fitted prior specification,
 sampling provenance and validation reports remain with the current results in
-`Los_Angeles_discrete_none/climate_zone_added_nb_pc/`.
-Previous no-SES-slope map exports are retained in
-`maps/nb_pc_prior/previous_no_ses_slopes/`.
+`Los_Angeles_discrete_none/climate_zone_added_nb_pc/` after refitting.
 
 The custom exchangeable correlation prior uses the determinant-distance PC
 construction described by [Ventrucci et al.](https://arxiv.org/abs/1902.08828),
@@ -86,24 +108,26 @@ The active folder is:
 Los_Angeles_discrete_none/
   Los Angeles_ACS_zcta_clustered_for_ED.rds
   Los Angeles_daily_ed_no_heat.rds
+  heat_model_layout.rds
+  heat_grid.rds
+  heat_map_style.rds
   Los Angeles_ACS_diss_mats.rds
   Los Angeles_ACS_diss_mats_MIN.rds
   los_angeles_zcta_2020.rds
   create_map.R
   linear_cluster/
-  climate_zone_added/
   climate_zone_added_nb_pc/
 ```
 
 The cluster assignments are the 20-covariate, 14-cluster solution used by all
-current heat models. The prepared daily ED input is unchanged from the file
-used for the saved fits.
+current heat models. The prepared daily ED input includes the seven one-visit
+corrections; previously saved fits retain their original counts internally.
 
 | Results folder | Model |
 | --- | --- |
 | `linear_cluster/` | Original linear acute-heat effects with SES-cluster heat slopes; no climate-zone heat curves |
-| `climate_zone_added/` | Shared and climate-zone RW2 curves plus SES-cluster heat-slope interactions |
-| `climate_zone_added_nb_pc/` | Current corrected NB model, preserving SES slopes and adding ZIP iid, exchangeable zone groups and PC hyperpriors |
+| `climate_zone_added_nb_pc/` | Current NB baseline without fixed linear heat slopes, using corrected counts; includes summaries, checks and 2,000 excess-rate draws |
+| `climate_zone_added_poisson_pc/` | Matched Poisson fit and NB/Poisson DIC, WAIC and zero-count diagnostics; no Poisson maps or joint draws |
 
 Each model folder contains its saved fits, coefficient summaries, WAIC/DIC TXT
 summary, AR summaries/posterior draws, and applicable acute-heat tables and plot
@@ -120,13 +144,17 @@ The `climate_zone/` and `climate_zone_zip_iid/` result folders and the
 `maps/climate_zone/` exports were removed during cleanup. The older `model_cache/`
 was also removed; the current baseline and map workflow read saved results directly.
 
-## Corrected-model prior sensitivity
+## Current-model precision-prior sensitivity
+
+The four precision-prior scenarios have been rerun for the revised model with
+26 fixed coefficients, no linear heat slopes, and corrected suppressed counts.
+They replace the previous precision-prior fits and reports in `prior_sensitivity_nb/`.
+The separate coefficient-variance results remain historical and have not been rerun.
 
 Run `Rscript hri_ed_analysis.R --sensitivity`. This is a fit-only comparison: it
 does not generate excess-rate posterior draws. It reuses the exact saved current
 baseline fit and any completed sensitivity fits, and fits the remaining
-alternative settings. All four scenarios preserve 40 fixed coefficients (including the
-common acute-heat slope and 13 SES interactions), the same data, population
+alternative settings. All four scenarios preserve 26 fixed coefficients, the same data, population
 offsets, ZIP iid intercept, exchangeable zone grouping, heat grid, PC correlation
 prior and PC NB-size prior. Only the four precision priors vary jointly:
 
@@ -140,12 +168,16 @@ prior and PC NB-size prior. Only the four precision priors vary jointly:
 Sensitivity results are in the top-level `prior_sensitivity_nb/` folder: `comparison.csv`
 and `comparison.txt`, all 42 full heat contrasts per scenario in
 `heat_contrasts.csv`, and conditional cluster IRRs. Each scenario retains its
-saved fit, active priors, summaries and validation reports. Existing baseline
-and stronger-prior excess-rate draws are retained separately; the sensitivity
-comparison does not use them. These assess the specified joint changes
+saved fit, active priors, summaries and validation reports. The main baseline's
+excess-rate draws are preserved; the comparison generates and uses no such draws.
+The weaker-PC and Gamma fits were restarted from their fitted solutions; retained
+fits passed their curvature checks without negative-eigenvalue corrections.
+Stronger/weaker PC alternatives changed heat IRR medians by at most 1.86% and
+probabilities by 3.12 percentage points. The Gamma comparison changed these by
+up to 6.55% and 10.26 points. No heat interval-exclusion decisions changed.
+These assess the specified joint changes
 to precision priors; they do not separately vary the correlation or dispersion
-prior. The SES heat-slope terms are linear; the shared and climate-zone RW2 curves
-provide the nonlinear components of the full heat response.
+prior. The shared and climate-zone RW2 curves provide the full acute-heat response.
 Fit-only validation checks the fitted model and INLA contrasts. It skips the
 separate excess-rate sampling backend; that check remains enabled when validating
 the current model and its sampled excess-rate outputs.
@@ -154,7 +186,10 @@ The optional correlation and NB-dispersion sensitivity workflow and its outputs
 were removed. The baseline remains the primary model; those two prior groups
 were not fully assessed by the retained sensitivity analysis.
 
-## Coefficient-prior variance sensitivity
+## Previous-model coefficient-prior variance sensitivity
+
+These retained results concern the previous 39 non-intercept coefficients and
+have not been repeated for the revised model's 25 non-intercept coefficients.
 
 Run `Rscript hri_ed_analysis.R --coefficient-sensitivity`. Results are saved in
 `prior_sensitivity_nb/coefficient_variance/`, with new fits in `variance_100/`
@@ -216,10 +251,10 @@ the posterior precision marginal.
   observed heat with the SES cluster's monthly mean heat.
 - `create_cluster.R`: upstream 20-covariate SES clustering; reads/writes the
   canonical output folder. It retains 2,000 burn-in iterations and 10,000 sweeps.
-- `suppressed_data.R`: daily-count reconstruction, now using the canonical
-  cluster/input folder. Its allocation calculations are unchanged.
-- `Los_Angeles_discrete_none/create_map.R`: historical map redraws, defaulting
-  to the retained `climate_zone_added` Poisson results.
+- `suppressed_data.R`: daily-count reconstruction using the canonical cluster/input
+  folder, with the all-zero suppressed-month one-visit override before raw zeros.
+- `Los_Angeles_discrete_none/create_map.R`: redraws the current NB maps and forest
+  plots; the retained `linear_cluster` plots can be selected explicitly.
 - `Los_Angeles_discrete_none/heat_coverage_diagnostics.R`: descriptive heat
   coverage and missing climate-zone report; it does not change model eligibility.
 Regenerate the current NB outputs from the saved fit:
@@ -238,7 +273,10 @@ its own outputs into `CA_simulated_ed/results/`.
 ## Maps and interpretation
 
 Map PNGs and PDFs remain under matching folders in `maps/`:
-`linear_cluster/`, `climate_zone_added/`, and `nb_pc_prior/` (current).
+`linear_cluster/`, `climate_zone_added/`, and `nb_pc_prior/` (revised NB model).
+The NB maps and three forest plots have been regenerated in that location, each
+as PNG and PDF. The fixed 1.0--2.0 IRR legend uses the nearest end color for
+estimates outside its display limits; numeric results retain their fitted values.
 Geographic maps use a 10-by-8-inch canvas; PNGs are 300 dpi. Gray areas without model results have diagonal hatching. Additional IRR point-and-interval plots show climate-zone effects, and cluster-by-zone effects for `climate_zone_added`. AR point-and-interval plots have been removed; AR probability maps and saved posterior draws remain.
 
 For climate-zone models, acute heat is each day's deviation from the ZIP's

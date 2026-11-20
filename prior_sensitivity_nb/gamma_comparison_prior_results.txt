@@ -1,0 +1,122 @@
+CORRECTED MODEL PRIOR SENSITIVITY: gamma_comparison
+PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL PRIOR SPECIFICATION
+26 fixed coefficients: common acute heat and all 13 SES heat interactions removed.
+Original rows, population offset, 50-node heat grid, scaling and RW2 sum-to-zero constraints retained; reconstructed counts updated.
+Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.
+Four precision priors: Gamma(shape=1, rate=5e-05), INLA loggamma on log precision.
+Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.
+Correlation support: (-0.25, 1); implemented as an internal-scale log-density table including its Jacobian.
+NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.
+Fit-only summaries: no excess-rate posterior draws generated.
+Shared input: Los_Angeles_discrete_none/heat_model_layout.rds
+Shared input: Los_Angeles_discrete_none/heat_grid.rds
+Shared input MD5: layout a6e7fd91fa7b2885f2ed09ace6f070b4
+Shared input MD5: grid e5d78aa4f5b77a2c37cb1db547efa3e0
+Reduced fixed-design MD5: e4d49ee7c586a2435c3a02162d0c3ad9
+INLA version: 26.6.7
+R version: R version 4.4.3 (2025-02-28 ucrt)
+
+Conditional cluster intercept IRRs:
+    family cluster       IRR     lower     upper
+ nbinomial       6 1.0000000 1.0000000 1.0000000
+ nbinomial       1 0.6183474 0.5258659 0.7272950
+ nbinomial      10 0.5964291 0.4407119 0.8072090
+ nbinomial      11 0.8111750 0.6705023 0.9815744
+ nbinomial      12 0.8259121 0.6336852 1.0769034
+ nbinomial      13 0.5939526 0.4789873 0.7366595
+ nbinomial      14 0.7201321 0.5840755 0.8884274
+ nbinomial       2 0.8200160 0.6438639 1.0445705
+ nbinomial       3 0.6609131 0.5522104 0.7911670
+ nbinomial       4 0.8887321 0.6914608 1.1426126
+ nbinomial       5 2.6064102 1.8361294 3.6980165
+ nbinomial       7 0.7861788 0.4882491 1.2642386
+ nbinomial       8 1.0632605 0.8121438 1.3935187
+ nbinomial       9 0.7957664 0.6634260 0.9547127
+
+Full one-SD heat contrasts by SES cluster and climate zone:
+ cluster climate_zone                   lincomb_id IRR_median IRR_lower
+       1           29       heat_1SD_cluster1_cz29   1.206818 1.0730130
+       8           29       heat_1SD_cluster8_cz29   1.206818 1.0730130
+       7         <NA>  heat_1SD_cluster7_czmissing   1.958317 0.9836676
+       3           29       heat_1SD_cluster3_cz29   1.206818 1.0730130
+       7           29       heat_1SD_cluster7_cz29   1.206818 1.0730130
+      12           29      heat_1SD_cluster12_cz29   1.206818 1.0730130
+       2           29       heat_1SD_cluster2_cz29   1.206818 1.0730130
+       6           29       heat_1SD_cluster6_cz29   1.206818 1.0730130
+      11           29      heat_1SD_cluster11_cz29   1.206818 1.0730130
+      12           28      heat_1SD_cluster12_cz28   1.201548 1.0695299
+       9           29       heat_1SD_cluster9_cz29   1.206818 1.0730130
+       6           28       heat_1SD_cluster6_cz28   1.201548 1.0695299
+      11           28      heat_1SD_cluster11_cz28   1.201548 1.0695299
+      13           29      heat_1SD_cluster13_cz29   1.206818 1.0730130
+       7           28       heat_1SD_cluster7_cz28   1.201548 1.0695299
+      14           29      heat_1SD_cluster14_cz29   1.206818 1.0730130
+      13           28      heat_1SD_cluster13_cz28   1.201548 1.0695299
+       9           28       heat_1SD_cluster9_cz28   1.201548 1.0695299
+      12         <NA> heat_1SD_cluster12_czmissing   1.958317 0.9836676
+       4           29       heat_1SD_cluster4_cz29   1.206818 1.0730130
+      14           30      heat_1SD_cluster14_cz30   1.156857 0.9980424
+      11           30      heat_1SD_cluster11_cz30   1.156857 0.9980424
+      14           28      heat_1SD_cluster14_cz28   1.201548 1.0695299
+       6           30       heat_1SD_cluster6_cz30   1.156857 0.9980424
+       2           28       heat_1SD_cluster2_cz28   1.201548 1.0695299
+       6         <NA>  heat_1SD_cluster6_czmissing   1.958317 0.9836676
+       3           28       heat_1SD_cluster3_cz28   1.201548 1.0695299
+       8           28       heat_1SD_cluster8_cz28   1.201548 1.0695299
+       4           30       heat_1SD_cluster4_cz30   1.156857 0.9980424
+       4           28       heat_1SD_cluster4_cz28   1.201548 1.0695299
+       9           30       heat_1SD_cluster9_cz30   1.156857 0.9980424
+       1           28       heat_1SD_cluster1_cz28   1.201548 1.0695299
+       3           30       heat_1SD_cluster3_cz30   1.156857 0.9980424
+      10           28      heat_1SD_cluster10_cz28   1.201548 1.0695299
+      10           29      heat_1SD_cluster10_cz29   1.206818 1.0730130
+       6           22       heat_1SD_cluster6_cz22   1.177861 0.9879109
+       4           22       heat_1SD_cluster4_cz22   1.177861 0.9879109
+       5           22       heat_1SD_cluster5_cz22   1.177861 0.9879109
+       5           30       heat_1SD_cluster5_cz30   1.156857 0.9980424
+       5           20       heat_1SD_cluster5_cz20   1.058981 0.6576918
+       7           22       heat_1SD_cluster7_cz22   1.177861 0.9879109
+       9           22       heat_1SD_cluster9_cz22   1.177861 0.9879109
+ IRR_upper P_IRR_gt_1
+  1.347056  0.9990002
+  1.347056  0.9990002
+  3.895881  0.9721321
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.339779  0.9988579
+  3.895881  0.9721321
+  1.347056  0.9990002
+  1.334997  0.9734608
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  3.895881  0.9721321
+  1.339779  0.9988579
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.399784  0.9660338
+  1.399784  0.9660338
+  1.399784  0.9660338
+  1.334997  0.9734608
+  1.704708  0.5932208
+  1.399784  0.9660338
+  1.399784  0.9660338

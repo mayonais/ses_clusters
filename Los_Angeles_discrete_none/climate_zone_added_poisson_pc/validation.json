@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "observations": 54910,
+  "ZIPs": 309,
+  "fixed_coefficients": 26,
+  "identical_predictor_data_exposure_and_common_priors": true,
+  "baseline_reused": true,
+  "protected_files_unchanged": true,
+  "protected_file_count": 54,
+  "baseline_model_md5": "b2ec2b5730fc2950a98b2a2c78d3c91b",
+  "poisson_model_md5": "88bdb2063d7ea570ff7c9ff0f681c894",
+  "newly_generated_excess_rate_draws": 0,
+  "zero_diagnostic": "In-sample plug-in: posterior mean rate times population; NB posterior mean size. No joint-posterior integration or predictive p-values.",
+  "INLA_version": "26.6.7"
+}

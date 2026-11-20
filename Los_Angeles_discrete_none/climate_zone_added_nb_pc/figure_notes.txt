@@ -1,13 +1,14 @@
 BASELINE PC NEGATIVE-BINOMIAL FIGURES
-Negative binomial | preserved SES heat slopes | PC hyperpriors
+Negative binomial | Shared/zone heat curves | PC hyperpriors
 Source model: Los_Angeles_discrete_none/climate_zone_added_nb_pc/nbinomial_model.rds
 Baseline cluster IRRs: conditional SES contrasts, relative to cluster 6.
 Acute-heat IRRs: 1 SD = 8.58<U+00B0>F above each ZIP's overall mean, versus that mean.
-Acute heat retains the common and SES-specific slopes, shared RW2 curve, and correlated climate-zone deviations.
+Acute heat uses only the shared RW2 curve and correlated climate-zone deviations; no linear cluster heat slopes.
 Excess rates: observed heat versus the SES-cluster monthly mean; signed visits/10,000 people/day.
 Maps use the existing mainland extent, 10 by 8 inch canvases, SES outlines and haloed cluster numbers.
-Visual reference: maps/climate_zone_added; its saved ggplot themes are reused.
+Visual reference: colors and themes preserved in Los_Angeles_discrete_none/heat_map_style.rds.
 IRR legend is fixed at 1.0-2.0 with ticks every 0.2; probability legends remain fixed at 0-100%.
+IRRs outside the display limits use the nearest end color; saved estimates remain unmodified.
 IRR uses the positive side of the climate_zone_added palette: white at 1.0 and red (#B2182B) at 2.0.
 Probability maps retain their climate_zone_added blue-off-white-red palette with midpoint 50%.
 Only three maps are exported: acute-heat IRR, acute-heat IRR exceedance probability, and excess-rate exceedance probability.

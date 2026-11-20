@@ -1,0 +1,534 @@
+CORRECTED NEGATIVE-BINOMIAL PRIOR SENSITIVITY
+
+All four scenarios exclude the common heat slope and all 13 SES heat interactions.
+Identical 54,910 observations, 309 ZIPs, offsets, 50-node grid, fixed priors, NB size prior and PC correlation prior.
+Only the four random-effect precision priors vary, jointly:
+pc_baseline: P(SD > 1) = 0.01; exact current fit reused.
+pc_stronger: P(SD > 0.5) = 0.01.
+pc_weaker: P(SD > 2) = 0.01.
+gamma_comparison: Gamma(shape=1, rate=0.00005) on precision; comparator only.
+Every scenario retains the same PC zone-correlation prior and PC NB-size prior.
+The main corrected model and current maps are unchanged.
+
+Smaller WAIC/DIC is preferred by those criteria. Changes compare posterior point summaries.
+Probability changes are percentage points, using INLA full-contrast marginals.
+This comparison is fit-only: no excess-rate posterior draws are generated.
+The main baseline's excess-rate draws are preserved; no draws are created or used in these comparisons.
+RW2 precision controls curvature, not unpenalized linear trends; interpret complete heat contrasts.
+These results assess the listed joint precision-prior changes, not every possible prior choice.
+
+         scenario    family     DIC    WAIC observed_zero_fraction
+      pc_baseline nbinomial 65217.1 65260.3               0.872191
+      pc_stronger nbinomial 65217.7 65260.6               0.872191
+        pc_weaker nbinomial 65216.8 65260.8               0.872191
+ gamma_comparison nbinomial 65217.2 65259.8               0.872191
+ predicted_zero_fraction_plugin zip_sd_mean zip_sd_lower zip_sd_upper
+                       0.869770    0.278302     0.235067     0.323335
+                       0.869776    0.279074     0.234500     0.329766
+                       0.869769    0.282092     0.238715     0.325719
+                       0.869815    0.279753     0.234957     0.329808
+ delta_WAIC_vs_baseline delta_DIC_vs_baseline delta_WAIC_vs_gamma
+               0.000000              0.000000            0.551492
+               0.213363              0.604388            0.764854
+               0.487935             -0.307276            1.039427
+              -0.551492              0.119353            0.000000
+ max_heat_IRR_change_pct_vs_baseline max_heat_probability_change_pp_vs_baseline
+                             0.00000                                    0.00000
+                             1.86190                                    3.11696
+                             1.13334                                    1.68326
+                             6.55483                                   10.26227
+
+Detailed outputs: heat_contrasts.csv (42 contrasts per scenario) and conditional_cluster_irrs.csv.
+Each scenario contains the saved fit, active fitted priors, summaries and validation checks.
+
+CORRECTED MODEL PRIOR SENSITIVITY: pc_baseline
+PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL PRIOR SPECIFICATION
+26 fixed coefficients: common acute heat and all 13 SES heat interactions removed.
+Original rows, population offset, 50-node heat grid, scaling and RW2 sum-to-zero constraints retained; reconstructed counts updated.
+Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.
+Four precision priors: pc.prec, P(1/sqrt(tau) > 1) = 0.01.
+Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.
+Correlation support: (-0.25, 1); implemented as an internal-scale log-density table including its Jacobian.
+NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.
+Fit-only summaries: no excess-rate posterior draws generated.
+Shared input: Los_Angeles_discrete_none/heat_model_layout.rds
+Shared input: Los_Angeles_discrete_none/heat_grid.rds
+Shared input MD5: layout a6e7fd91fa7b2885f2ed09ace6f070b4
+Shared input MD5: grid e5d78aa4f5b77a2c37cb1db547efa3e0
+Reduced fixed-design MD5: e4d49ee7c586a2435c3a02162d0c3ad9
+INLA version: 26.6.7
+R version: R version 4.4.3 (2025-02-28 ucrt)
+
+Conditional cluster intercept IRRs:
+    family cluster       IRR     lower     upper
+ nbinomial       6 1.0000000 1.0000000 1.0000000
+ nbinomial       1 0.6158932 0.5211713 0.7279029
+ nbinomial      10 0.5983056 0.4413275 0.8110615
+ nbinomial      11 0.8071324 0.6664154 0.9777667
+ nbinomial      12 0.8223503 0.6303429 1.0733007
+ nbinomial      13 0.5974582 0.4814085 0.7416224
+ nbinomial      14 0.7140119 0.5781137 0.8823610
+ nbinomial       2 0.8235851 0.6461030 1.0499849
+ nbinomial       3 0.6614415 0.5514983 0.7933578
+ nbinomial       4 0.8241277 0.6270519 1.0813006
+ nbinomial       5 2.3834798 1.6407249 3.4505135
+ nbinomial       7 0.7682917 0.4763392 1.2376190
+ nbinomial       8 1.0636066 0.8105819 1.3968584
+ nbinomial       9 0.7864533 0.6544639 0.9452393
+
+Full one-SD heat contrasts by SES cluster and climate zone:
+ cluster climate_zone                   lincomb_id IRR_median IRR_lower
+       1           29       heat_1SD_cluster1_cz29  1.2000162 1.0562465
+       8           29       heat_1SD_cluster8_cz29  1.2000162 1.0562465
+       7         <NA>  heat_1SD_cluster7_czmissing  1.8650034 0.9371471
+       3           29       heat_1SD_cluster3_cz29  1.2000162 1.0562465
+       7           29       heat_1SD_cluster7_cz29  1.2000162 1.0562465
+      12           29      heat_1SD_cluster12_cz29  1.2000162 1.0562465
+       2           29       heat_1SD_cluster2_cz29  1.2000162 1.0562465
+       6           29       heat_1SD_cluster6_cz29  1.2000162 1.0562465
+      11           29      heat_1SD_cluster11_cz29  1.2000162 1.0562465
+      12           28      heat_1SD_cluster12_cz28  1.2318265 1.0851494
+       9           29       heat_1SD_cluster9_cz29  1.2000162 1.0562465
+       6           28       heat_1SD_cluster6_cz28  1.2318265 1.0851494
+      11           28      heat_1SD_cluster11_cz28  1.2318265 1.0851494
+      13           29      heat_1SD_cluster13_cz29  1.2000162 1.0562465
+       7           28       heat_1SD_cluster7_cz28  1.2318265 1.0851494
+      14           29      heat_1SD_cluster14_cz29  1.2000162 1.0562465
+      13           28      heat_1SD_cluster13_cz28  1.2318265 1.0851494
+       9           28       heat_1SD_cluster9_cz28  1.2318265 1.0851494
+      12         <NA> heat_1SD_cluster12_czmissing  1.8650034 0.9371471
+       4           29       heat_1SD_cluster4_cz29  1.2000162 1.0562465
+      14           30      heat_1SD_cluster14_cz30  1.1354731 0.9475193
+      11           30      heat_1SD_cluster11_cz30  1.1354731 0.9475193
+      14           28      heat_1SD_cluster14_cz28  1.2318265 1.0851494
+       6           30       heat_1SD_cluster6_cz30  1.1354731 0.9475193
+       2           28       heat_1SD_cluster2_cz28  1.2318265 1.0851494
+       6         <NA>  heat_1SD_cluster6_czmissing  1.8650034 0.9371471
+       3           28       heat_1SD_cluster3_cz28  1.2318265 1.0851494
+       8           28       heat_1SD_cluster8_cz28  1.2318265 1.0851494
+       4           30       heat_1SD_cluster4_cz30  1.1354731 0.9475193
+       4           28       heat_1SD_cluster4_cz28  1.2318265 1.0851494
+       9           30       heat_1SD_cluster9_cz30  1.1354731 0.9475193
+       1           28       heat_1SD_cluster1_cz28  1.2318265 1.0851494
+       3           30       heat_1SD_cluster3_cz30  1.1354731 0.9475193
+      10           28      heat_1SD_cluster10_cz28  1.2318265 1.0851494
+      10           29      heat_1SD_cluster10_cz29  1.2000162 1.0562465
+       6           22       heat_1SD_cluster6_cz22  1.1355236 0.9162143
+       4           22       heat_1SD_cluster4_cz22  1.1355236 0.9162143
+       5           22       heat_1SD_cluster5_cz22  1.1355236 0.9162143
+       5           30       heat_1SD_cluster5_cz30  1.1354731 0.9475193
+       5           20       heat_1SD_cluster5_cz20  0.9938363 0.5907814
+       7           22       heat_1SD_cluster7_cz22  1.1355236 0.9162143
+       9           22       heat_1SD_cluster9_cz22  1.1355236 0.9162143
+ IRR_upper P_IRR_gt_1
+  1.359554  0.9972663
+  1.359554  0.9972663
+  3.710954  0.9620571
+  1.359554  0.9972663
+  1.359554  0.9972663
+  1.359554  0.9972663
+  1.359554  0.9972663
+  1.359554  0.9972663
+  1.359554  0.9972663
+  1.396969  0.9993055
+  1.359554  0.9972663
+  1.396969  0.9993055
+  1.396969  0.9993055
+  1.359554  0.9972663
+  1.396969  0.9993055
+  1.359554  0.9972663
+  1.396969  0.9993055
+  1.396969  0.9993055
+  3.710954  0.9620571
+  1.359554  0.9972663
+  1.358621  0.9165348
+  1.358621  0.9165348
+  1.396969  0.9993055
+  1.358621  0.9165348
+  1.396969  0.9993055
+  3.710954  0.9620571
+  1.396969  0.9993055
+  1.396969  0.9993055
+  1.358621  0.9165348
+  1.396969  0.9993055
+  1.358621  0.9165348
+  1.396969  0.9993055
+  1.358621  0.9165348
+  1.396969  0.9993055
+  1.359554  0.9972663
+  1.401997  0.8790191
+  1.401997  0.8790191
+  1.401997  0.8790191
+  1.358621  0.9165348
+  1.657355  0.4905981
+  1.401997  0.8790191
+  1.401997  0.8790191
+
+CORRECTED MODEL PRIOR SENSITIVITY: pc_stronger
+PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL PRIOR SPECIFICATION
+26 fixed coefficients: common acute heat and all 13 SES heat interactions removed.
+Original rows, population offset, 50-node heat grid, scaling and RW2 sum-to-zero constraints retained; reconstructed counts updated.
+Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.
+Four precision priors: pc.prec, P(1/sqrt(tau) > 0.5) = 0.01.
+Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.
+Correlation support: (-0.25, 1); implemented as an internal-scale log-density table including its Jacobian.
+NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.
+Fit-only summaries: no excess-rate posterior draws generated.
+Shared input: Los_Angeles_discrete_none/heat_model_layout.rds
+Shared input: Los_Angeles_discrete_none/heat_grid.rds
+Shared input MD5: layout a6e7fd91fa7b2885f2ed09ace6f070b4
+Shared input MD5: grid e5d78aa4f5b77a2c37cb1db547efa3e0
+Reduced fixed-design MD5: e4d49ee7c586a2435c3a02162d0c3ad9
+INLA version: 26.6.7
+R version: R version 4.4.3 (2025-02-28 ucrt)
+
+Conditional cluster intercept IRRs:
+    family cluster       IRR     lower     upper
+ nbinomial       6 1.0000000 1.0000000 1.0000000
+ nbinomial       1 0.6160475 0.5222837 0.7267480
+ nbinomial      10 0.5979722 0.4421336 0.8086905
+ nbinomial      11 0.8074031 0.6676291 0.9766698
+ nbinomial      12 0.8222442 0.6314043 1.0712163
+ nbinomial      13 0.5966783 0.4815564 0.7394363
+ nbinomial      14 0.7147129 0.5796404 0.8817609
+ nbinomial       2 0.8227579 0.6466048 1.0470518
+ nbinomial       3 0.6612082 0.5521760 0.7918505
+ nbinomial       4 0.8313449 0.6269231 1.0930642
+ nbinomial       5 2.4044973 1.6306225 3.4996145
+ nbinomial       7 0.7712397 0.4792258 1.2397353
+ nbinomial       8 1.0619919 0.8110804 1.3917910
+ nbinomial       9 0.7875945 0.6562669 0.9454038
+
+Full one-SD heat contrasts by SES cluster and climate zone:
+ cluster climate_zone                   lincomb_id IRR_median IRR_lower
+       1           29       heat_1SD_cluster1_cz29   1.206784 1.0591348
+       8           29       heat_1SD_cluster8_cz29   1.206784 1.0591348
+       7         <NA>  heat_1SD_cluster7_czmissing   1.890544 0.9489342
+       3           29       heat_1SD_cluster3_cz29   1.206784 1.0591348
+       7           29       heat_1SD_cluster7_cz29   1.206784 1.0591348
+      12           29      heat_1SD_cluster12_cz29   1.206784 1.0591348
+       2           29       heat_1SD_cluster2_cz29   1.206784 1.0591348
+       6           29       heat_1SD_cluster6_cz29   1.206784 1.0591348
+      11           29      heat_1SD_cluster11_cz29   1.206784 1.0591348
+      12           28      heat_1SD_cluster12_cz28   1.233680 1.0883438
+       9           29       heat_1SD_cluster9_cz29   1.206784 1.0591348
+       6           28       heat_1SD_cluster6_cz28   1.233680 1.0883438
+      11           28      heat_1SD_cluster11_cz28   1.233680 1.0883438
+      13           29      heat_1SD_cluster13_cz29   1.206784 1.0591348
+       7           28       heat_1SD_cluster7_cz28   1.233680 1.0883438
+      14           29      heat_1SD_cluster14_cz29   1.206784 1.0591348
+      13           28      heat_1SD_cluster13_cz28   1.233680 1.0883438
+       9           28       heat_1SD_cluster9_cz28   1.233680 1.0883438
+      12         <NA> heat_1SD_cluster12_czmissing   1.890544 0.9489342
+       4           29       heat_1SD_cluster4_cz29   1.206784 1.0591348
+      14           30      heat_1SD_cluster14_cz30   1.149022 0.9589265
+      11           30      heat_1SD_cluster11_cz30   1.149022 0.9589265
+      14           28      heat_1SD_cluster14_cz28   1.233680 1.0883438
+       6           30       heat_1SD_cluster6_cz30   1.149022 0.9589265
+       2           28       heat_1SD_cluster2_cz28   1.233680 1.0883438
+       6         <NA>  heat_1SD_cluster6_czmissing   1.890544 0.9489342
+       3           28       heat_1SD_cluster3_cz28   1.233680 1.0883438
+       8           28       heat_1SD_cluster8_cz28   1.233680 1.0883438
+       4           30       heat_1SD_cluster4_cz30   1.149022 0.9589265
+       4           28       heat_1SD_cluster4_cz28   1.233680 1.0883438
+       9           30       heat_1SD_cluster9_cz30   1.149022 0.9589265
+       1           28       heat_1SD_cluster1_cz28   1.233680 1.0883438
+       3           30       heat_1SD_cluster3_cz30   1.149022 0.9589265
+      10           28      heat_1SD_cluster10_cz28   1.233680 1.0883438
+      10           29      heat_1SD_cluster10_cz29   1.206784 1.0591348
+       6           22       heat_1SD_cluster6_cz22   1.156666 0.9307609
+       4           22       heat_1SD_cluster4_cz22   1.156666 0.9307609
+       5           22       heat_1SD_cluster5_cz22   1.156666 0.9307609
+       5           30       heat_1SD_cluster5_cz30   1.149022 0.9589265
+       5           20       heat_1SD_cluster5_cz20   1.004733 0.5852336
+       7           22       heat_1SD_cluster7_cz22   1.156666 0.9307609
+       9           22       heat_1SD_cluster9_cz22   1.156666 0.9307609
+ IRR_upper P_IRR_gt_1
+  1.362391  0.9972019
+  1.362391  0.9972019
+  3.765763  0.9649244
+  1.362391  0.9972019
+  1.362391  0.9972019
+  1.362391  0.9972019
+  1.362391  0.9972019
+  1.362391  0.9972019
+  1.362391  0.9972019
+  1.396475  0.9993560
+  1.362391  0.9972019
+  1.396475  0.9993560
+  1.396475  0.9993560
+  1.362391  0.9972019
+  1.396475  0.9993560
+  1.362391  0.9972019
+  1.396475  0.9993560
+  1.396475  0.9993560
+  3.765763  0.9649244
+  1.362391  0.9972019
+  1.366998  0.9361526
+  1.366998  0.9361526
+  1.396475  0.9993560
+  1.366998  0.9361526
+  1.396475  0.9993560
+  3.765763  0.9649244
+  1.396475  0.9993560
+  1.396475  0.9993560
+  1.366998  0.9361526
+  1.396475  0.9993560
+  1.366998  0.9361526
+  1.396475  0.9993560
+  1.366998  0.9361526
+  1.396475  0.9993560
+  1.362391  0.9972019
+  1.418270  0.9101887
+  1.418270  0.9101887
+  1.418270  0.9101887
+  1.366998  0.9361526
+  1.670933  0.5071259
+  1.418270  0.9101887
+  1.418270  0.9101887
+
+CORRECTED MODEL PRIOR SENSITIVITY: pc_weaker
+PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL PRIOR SPECIFICATION
+26 fixed coefficients: common acute heat and all 13 SES heat interactions removed.
+Original rows, population offset, 50-node heat grid, scaling and RW2 sum-to-zero constraints retained; reconstructed counts updated.
+Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.
+Four precision priors: pc.prec, P(1/sqrt(tau) > 2) = 0.01.
+Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.
+Correlation support: (-0.25, 1); implemented as an internal-scale log-density table including its Jacobian.
+NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.
+Fit-only summaries: no excess-rate posterior draws generated.
+Shared input: Los_Angeles_discrete_none/heat_model_layout.rds
+Shared input: Los_Angeles_discrete_none/heat_grid.rds
+Shared input MD5: layout a6e7fd91fa7b2885f2ed09ace6f070b4
+Shared input MD5: grid e5d78aa4f5b77a2c37cb1db547efa3e0
+Reduced fixed-design MD5: e4d49ee7c586a2435c3a02162d0c3ad9
+INLA version: 26.6.7
+R version: R version 4.4.3 (2025-02-28 ucrt)
+
+Conditional cluster intercept IRRs:
+    family cluster       IRR     lower     upper
+ nbinomial       6 1.0000000 1.0000000 1.0000000
+ nbinomial       1 0.6165267 0.5212047 0.7293565
+ nbinomial      10 0.5986109 0.4408654 0.8127203
+ nbinomial      11 0.8073868 0.6659857 0.9790368
+ nbinomial      12 0.8217457 0.6290726 1.0739417
+ nbinomial      13 0.5977854 0.4811506 0.7428277
+ nbinomial      14 0.7141381 0.5776037 0.8834705
+ nbinomial       2 0.8239767 0.6456407 1.0517307
+ nbinomial       3 0.6619530 0.5514007 0.7947234
+ nbinomial       4 0.8204653 0.6213605 1.0808522
+ nbinomial       5 2.3645627 1.6165517 3.4422727
+ nbinomial       7 0.7653621 0.4735918 1.2354162
+ nbinomial       8 1.0653719 0.8108543 1.4010663
+ nbinomial       9 0.7863251 0.6537318 0.9460299
+
+Full one-SD heat contrasts by SES cluster and climate zone:
+ cluster climate_zone                   lincomb_id IRR_median IRR_lower
+       1           29       heat_1SD_cluster1_cz29  1.1961099 1.0463707
+       8           29       heat_1SD_cluster8_cz29  1.1961099 1.0463707
+       7         <NA>  heat_1SD_cluster7_czmissing  1.8451153 0.9255742
+       3           29       heat_1SD_cluster3_cz29  1.1961099 1.0463707
+       7           29       heat_1SD_cluster7_cz29  1.1961099 1.0463707
+      12           29      heat_1SD_cluster12_cz29  1.1961099 1.0463707
+       2           29       heat_1SD_cluster2_cz29  1.1961099 1.0463707
+       6           29       heat_1SD_cluster6_cz29  1.1961099 1.0463707
+      11           29      heat_1SD_cluster11_cz29  1.1961099 1.0463707
+      12           28      heat_1SD_cluster12_cz28  1.2310408 1.0779273
+       9           29       heat_1SD_cluster9_cz29  1.1961099 1.0463707
+       6           28       heat_1SD_cluster6_cz28  1.2310408 1.0779273
+      11           28      heat_1SD_cluster11_cz28  1.2310408 1.0779273
+      13           29      heat_1SD_cluster13_cz29  1.1961099 1.0463707
+       7           28       heat_1SD_cluster7_cz28  1.2310408 1.0779273
+      14           29      heat_1SD_cluster14_cz29  1.1961099 1.0463707
+      13           28      heat_1SD_cluster13_cz28  1.2310408 1.0779273
+       9           28       heat_1SD_cluster9_cz28  1.2310408 1.0779273
+      12         <NA> heat_1SD_cluster12_czmissing  1.8451153 0.9255742
+       4           29       heat_1SD_cluster4_cz29  1.1961099 1.0463707
+      14           30      heat_1SD_cluster14_cz30  1.1328160 0.9380194
+      11           30      heat_1SD_cluster11_cz30  1.1328160 0.9380194
+      14           28      heat_1SD_cluster14_cz28  1.2310408 1.0779273
+       6           30       heat_1SD_cluster6_cz30  1.1328160 0.9380194
+       2           28       heat_1SD_cluster2_cz28  1.2310408 1.0779273
+       6         <NA>  heat_1SD_cluster6_czmissing  1.8451153 0.9255742
+       3           28       heat_1SD_cluster3_cz28  1.2310408 1.0779273
+       8           28       heat_1SD_cluster8_cz28  1.2310408 1.0779273
+       4           30       heat_1SD_cluster4_cz30  1.1328160 0.9380194
+       4           28       heat_1SD_cluster4_cz28  1.2310408 1.0779273
+       9           30       heat_1SD_cluster9_cz30  1.1328160 0.9380194
+       1           28       heat_1SD_cluster1_cz28  1.2310408 1.0779273
+       3           30       heat_1SD_cluster3_cz30  1.1328160 0.9380194
+      10           28      heat_1SD_cluster10_cz28  1.2310408 1.0779273
+      10           29      heat_1SD_cluster10_cz29  1.1961099 1.0463707
+       6           22       heat_1SD_cluster6_cz22  1.1310444 0.9049659
+       4           22       heat_1SD_cluster4_cz22  1.1310444 0.9049659
+       5           22       heat_1SD_cluster5_cz22  1.1310444 0.9049659
+       5           30       heat_1SD_cluster5_cz30  1.1328160 0.9380194
+       5           20       heat_1SD_cluster5_cz20  0.9825727 0.5764216
+       7           22       heat_1SD_cluster7_cz22  1.1310444 0.9049659
+       9           22       heat_1SD_cluster9_cz22  1.1310444 0.9049659
+ IRR_upper P_IRR_gt_1
+  1.362254  0.9954471
+  1.362254  0.9954471
+  3.677671  0.9590900
+  1.362254  0.9954471
+  1.362254  0.9954471
+  1.362254  0.9954471
+  1.362254  0.9954471
+  1.362254  0.9954471
+  1.362254  0.9954471
+  1.403458  0.9988211
+  1.362254  0.9954471
+  1.403458  0.9988211
+  1.403458  0.9988211
+  1.362254  0.9954471
+  1.403458  0.9988211
+  1.362254  0.9954471
+  1.403458  0.9988211
+  1.403458  0.9988211
+  3.677671  0.9590900
+  1.362254  0.9954471
+  1.365061  0.9037943
+  1.365061  0.9037943
+  1.403458  0.9988211
+  1.365061  0.9037943
+  1.403458  0.9988211
+  3.677671  0.9590900
+  1.403458  0.9988211
+  1.403458  0.9988211
+  1.365061  0.9037943
+  1.403458  0.9988211
+  1.365061  0.9037943
+  1.403458  0.9988211
+  1.365061  0.9037943
+  1.403458  0.9988211
+  1.362254  0.9954471
+  1.407178  0.8629594
+  1.407178  0.8629594
+  1.407178  0.8629594
+  1.365061  0.9037943
+  1.651375  0.4737655
+  1.407178  0.8629594
+  1.407178  0.8629594
+
+CORRECTED MODEL PRIOR SENSITIVITY: gamma_comparison
+PRESERVED CLIMATE_ZONE_ADDED: NEGATIVE BINOMIAL PRIOR SPECIFICATION
+26 fixed coefficients: common acute heat and all 13 SES heat interactions removed.
+Original rows, population offset, 50-node heat grid, scaling and RW2 sum-to-zero constraints retained; reconstructed counts updated.
+Added iid ZIP random intercept; zone replication replaced by exchangeable group correlation.
+Four precision priors: Gamma(shape=1, rate=5e-05), INLA loggamma on log precision.
+Zone correlation: two-sided exchangeable PC prior, base rho=0; P(rho>0.5)=0.1; each sign has mass 0.5.
+Correlation support: (-0.25, 1); implemented as an internal-scale log-density table including its Jacobian.
+NB size: pc.mgamma, parameter 7; non-intercept fixed coefficients: Normal(0, variance=1000); intercept: flat.
+Fit-only summaries: no excess-rate posterior draws generated.
+Shared input: Los_Angeles_discrete_none/heat_model_layout.rds
+Shared input: Los_Angeles_discrete_none/heat_grid.rds
+Shared input MD5: layout a6e7fd91fa7b2885f2ed09ace6f070b4
+Shared input MD5: grid e5d78aa4f5b77a2c37cb1db547efa3e0
+Reduced fixed-design MD5: e4d49ee7c586a2435c3a02162d0c3ad9
+INLA version: 26.6.7
+R version: R version 4.4.3 (2025-02-28 ucrt)
+
+Conditional cluster intercept IRRs:
+    family cluster       IRR     lower     upper
+ nbinomial       6 1.0000000 1.0000000 1.0000000
+ nbinomial       1 0.6183474 0.5258659 0.7272950
+ nbinomial      10 0.5964291 0.4407119 0.8072090
+ nbinomial      11 0.8111750 0.6705023 0.9815744
+ nbinomial      12 0.8259121 0.6336852 1.0769034
+ nbinomial      13 0.5939526 0.4789873 0.7366595
+ nbinomial      14 0.7201321 0.5840755 0.8884274
+ nbinomial       2 0.8200160 0.6438639 1.0445705
+ nbinomial       3 0.6609131 0.5522104 0.7911670
+ nbinomial       4 0.8887321 0.6914608 1.1426126
+ nbinomial       5 2.6064102 1.8361294 3.6980165
+ nbinomial       7 0.7861788 0.4882491 1.2642386
+ nbinomial       8 1.0632605 0.8121438 1.3935187
+ nbinomial       9 0.7957664 0.6634260 0.9547127
+
+Full one-SD heat contrasts by SES cluster and climate zone:
+ cluster climate_zone                   lincomb_id IRR_median IRR_lower
+       1           29       heat_1SD_cluster1_cz29   1.206818 1.0730130
+       8           29       heat_1SD_cluster8_cz29   1.206818 1.0730130
+       7         <NA>  heat_1SD_cluster7_czmissing   1.958317 0.9836676
+       3           29       heat_1SD_cluster3_cz29   1.206818 1.0730130
+       7           29       heat_1SD_cluster7_cz29   1.206818 1.0730130
+      12           29      heat_1SD_cluster12_cz29   1.206818 1.0730130
+       2           29       heat_1SD_cluster2_cz29   1.206818 1.0730130
+       6           29       heat_1SD_cluster6_cz29   1.206818 1.0730130
+      11           29      heat_1SD_cluster11_cz29   1.206818 1.0730130
+      12           28      heat_1SD_cluster12_cz28   1.201548 1.0695299
+       9           29       heat_1SD_cluster9_cz29   1.206818 1.0730130
+       6           28       heat_1SD_cluster6_cz28   1.201548 1.0695299
+      11           28      heat_1SD_cluster11_cz28   1.201548 1.0695299
+      13           29      heat_1SD_cluster13_cz29   1.206818 1.0730130
+       7           28       heat_1SD_cluster7_cz28   1.201548 1.0695299
+      14           29      heat_1SD_cluster14_cz29   1.206818 1.0730130
+      13           28      heat_1SD_cluster13_cz28   1.201548 1.0695299
+       9           28       heat_1SD_cluster9_cz28   1.201548 1.0695299
+      12         <NA> heat_1SD_cluster12_czmissing   1.958317 0.9836676
+       4           29       heat_1SD_cluster4_cz29   1.206818 1.0730130
+      14           30      heat_1SD_cluster14_cz30   1.156857 0.9980424
+      11           30      heat_1SD_cluster11_cz30   1.156857 0.9980424
+      14           28      heat_1SD_cluster14_cz28   1.201548 1.0695299
+       6           30       heat_1SD_cluster6_cz30   1.156857 0.9980424
+       2           28       heat_1SD_cluster2_cz28   1.201548 1.0695299
+       6         <NA>  heat_1SD_cluster6_czmissing   1.958317 0.9836676
+       3           28       heat_1SD_cluster3_cz28   1.201548 1.0695299
+       8           28       heat_1SD_cluster8_cz28   1.201548 1.0695299
+       4           30       heat_1SD_cluster4_cz30   1.156857 0.9980424
+       4           28       heat_1SD_cluster4_cz28   1.201548 1.0695299
+       9           30       heat_1SD_cluster9_cz30   1.156857 0.9980424
+       1           28       heat_1SD_cluster1_cz28   1.201548 1.0695299
+       3           30       heat_1SD_cluster3_cz30   1.156857 0.9980424
+      10           28      heat_1SD_cluster10_cz28   1.201548 1.0695299
+      10           29      heat_1SD_cluster10_cz29   1.206818 1.0730130
+       6           22       heat_1SD_cluster6_cz22   1.177861 0.9879109
+       4           22       heat_1SD_cluster4_cz22   1.177861 0.9879109
+       5           22       heat_1SD_cluster5_cz22   1.177861 0.9879109
+       5           30       heat_1SD_cluster5_cz30   1.156857 0.9980424
+       5           20       heat_1SD_cluster5_cz20   1.058981 0.6576918
+       7           22       heat_1SD_cluster7_cz22   1.177861 0.9879109
+       9           22       heat_1SD_cluster9_cz22   1.177861 0.9879109
+ IRR_upper P_IRR_gt_1
+  1.347056  0.9990002
+  1.347056  0.9990002
+  3.895881  0.9721321
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.339779  0.9988579
+  1.339779  0.9988579
+  3.895881  0.9721321
+  1.347056  0.9990002
+  1.334997  0.9734608
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  3.895881  0.9721321
+  1.339779  0.9988579
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.334997  0.9734608
+  1.339779  0.9988579
+  1.347056  0.9990002
+  1.399784  0.9660338
+  1.399784  0.9660338
+  1.399784  0.9660338
+  1.334997  0.9734608
+  1.704708  0.5932208
+  1.399784  0.9660338
+  1.399784  0.9660338

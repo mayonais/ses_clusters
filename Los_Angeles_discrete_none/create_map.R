@@ -1,4 +1,4 @@
-# Run from this input folder to redraw the three probability maps.
+# Run from this input folder to redraw the current NB maps and forest plots.
 local({
   original_dir <- getwd()
   on.exit(setwd(original_dir))
@@ -18,7 +18,12 @@ local({
 # Redraw all three mainland probability maps with identical panel dimensions.
 library(ggplot2)
 source("shared_functions.R")
-model_variant <- "climate_zone_added"  # "climate_zone_added" or "linear_cluster"
+model_variant <- "nb_pc_prior"  # current model; "linear_cluster" for historical plots
+if (identical(model_variant, "nb_pc_prior")) {
+  nb_map_environment <- new.env(parent = environment())
+  nb_map_environment$model_variant <- model_variant
+  source("acute_heat_irr_maps.R", local = nb_map_environment)
+} else {
 model_family <- "poisson"  # "poisson", "nbinomial", or "both"
 root <- file.path("Los_Angeles_discrete_none")
 results_root <- if (model_variant %in% c("climate_zone_added", "climate_zone")) file.path(root, model_variant) else file.path(root, "linear_cluster")
@@ -92,4 +97,5 @@ for (i in seq_along(grobs)) {
 }
 cat("Probability maps: mainland geometry, aligned 10 x 8 inch layout, fixed 0-1 blue-white-red scale centered at 0.5.\n")
 
+}
 })

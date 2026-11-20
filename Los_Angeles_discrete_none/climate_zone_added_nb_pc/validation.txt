@@ -1,19 +1,23 @@
 PRESERVED CLIMATE_ZONE_ADDED NB VALIDATION
 PASSED: Correlation PC prior matches native INLA two-zone benchmark
 PASSED: Five-zone correlation density agrees with matrix determinant and numerical Jacobian
-PASSED: Original fixed design and all 14 SES heat slopes preserved
-PASSED: Original population offsets and heat grid preserved
+PASSED: Shared input provenance matches the fitted model
+PASSED: All 14 linear heat slopes removed; shared fixed design preserved
+PASSED: Shared ZIP/date row order preserved
+PASSED: Fitted counts match the current suppressed-count reconstruction
+PASSED: Linear heat metadata disabled
+PASSED: Shared population offsets and heat grid preserved
 PASSED: Negative-binomial likelihood and converged mode
 PASSED: Gaussian sampling backend matches saved constrained INLA variances
 PASSED: Exactly four random-effect precision terms
-PASSED: PC precision prior doy
-PASSED: PC precision prior acute_heat_rw2_shared
-PASSED: PC precision prior acute_heat_rw2_dev
+PASSED: Expected precision prior doy
+PASSED: Expected precision prior acute_heat_rw2_shared
+PASSED: Expected precision prior acute_heat_rw2_dev
 PASSED: Exchangeable zone correlation uses the calibrated PC table
-PASSED: PC precision prior zip_id
+PASSED: Expected precision prior zip_id
 PASSED: PC prior on negative-binomial size
 PASSED: 42 finite cluster-by-zone full heat contrasts
-PASSED: All 42 saved contrasts have exact SES, shared-curve and zone-curve weights
+PASSED: All 42 saved contrasts match the fitted fixed terms and shared/zone curves
 PASSED: 2000 finite signed joint excess-rate draws for each SES cluster
 PASSED: Excess-rate provenance matches the corrected model
 PASSED: Three requested maps exported as PNG and PDF
